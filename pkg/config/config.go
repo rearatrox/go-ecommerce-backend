@@ -1,7 +1,8 @@
 package config
 
 import (
-	"fmt"
+	"log"
+	"os"
 
 	"github.com/joho/godotenv"
 )
@@ -9,8 +10,13 @@ import (
 // Load lädt die .env-Datei aus dem Projektroot.
 // Sie kann aus jedem Service aufgerufen werden (einmal pro main.go reicht).
 func Load() {
-	err := godotenv.Load("../../.env")
-	if err != nil {
-		fmt.Println("⚠️  Keine .env-Datei gefunden – nutze System-ENV")
+	if err := godotenv.Load("../../.env"); err == nil {
+		log.Println("✅ .env-Datei geladen")
+	} else {
+		if os.Getenv("JWT_SECRET") != "" {
+			log.Println("ℹ️  ENV-Variablen aus System übernommen")
+		} else {
+			log.Println("⚠️  Keine .env-Datei und keine ENV-Variablen gefunden!")
+		}
 	}
 }

@@ -19,6 +19,6 @@ func main() {
 
 	RegisterRoutes(router)
 
-	router.Run(fmt.Sprintf(":%v", os.Getenv("EVENTSERVICE_PORT"))) // localhost:EVENTSERVICE_PORT
+	router.Run(":8080") // localhost:8080 -> Container-Port wird durch EVENTSERVICE_PORT gesetzt
 
 }

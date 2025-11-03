@@ -19,6 +19,6 @@ func main() {
 
 	RegisterRoutes(router)
 
-	router.Run(fmt.Sprintf(":%v", os.Getenv("USERSERVICE_PORT"))) // localhost:USERSERVICE_PORT
+	router.Run(":8080") // localhost:8080 --> USERSERVICE_PORT mappt dann den Container
 
 }
