@@ -77,3 +77,9 @@ Eine Integration mit [**swaggo/gin-swagger**](https://github.com/swaggo/gin-swag
 
 In Zukunft werden Kubernetes-Manifeste unter  
 `/k8s/` bereitgestellt, um eine einfache Bereitstellung der Services auf einem Cluster zu ermöglichen.
+
+---
+
+## Grundlage 
+
+Als Grundlage des Projekts diente der folgende Udemy-Kurs: [Go - The Complete Guide](https://www.udemy.com/course/go-the-complete-guide/)
