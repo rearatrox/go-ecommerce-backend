@@ -1,0 +1,1 @@
+Das hier ist reiner Text als Datei zum Arbeiten mit github branches. 
