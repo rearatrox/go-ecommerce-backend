@@ -37,23 +37,33 @@ func Init(cfg Config) error {
 		w = f
 	}
 
+	suppressKeys := func(groups []string, a slog.Attr) slog.Attr {
+
+		for _, g := range groups {
+			if g == "client" {
+				return slog.Attr{}
+			}
+		}
+		return a
+	}
+
 	opts := &slog.HandlerOptions{}
 
 	switch strings.ToLower(cfg.Level) {
 	case "debug":
-		opts = &slog.HandlerOptions{AddSource: true}
 		opts.Level = slog.LevelDebug
+		opts = &slog.HandlerOptions{AddSource: true}
 	case "info":
-		opts = &slog.HandlerOptions{AddSource: false}
+		opts = &slog.HandlerOptions{AddSource: false, ReplaceAttr: suppressKeys}
 		opts.Level = slog.LevelInfo
 	case "warn", "warning":
-		opts = &slog.HandlerOptions{AddSource: false}
+		opts = &slog.HandlerOptions{AddSource: false, ReplaceAttr: suppressKeys}
 		opts.Level = slog.LevelWarn
 	case "error":
-		opts = &slog.HandlerOptions{AddSource: false}
+		opts = &slog.HandlerOptions{AddSource: false, ReplaceAttr: suppressKeys}
 		opts.Level = slog.LevelError
 	default:
-		opts = &slog.HandlerOptions{AddSource: false}
+		opts = &slog.HandlerOptions{AddSource: false, ReplaceAttr: suppressKeys}
 		opts.Level = slog.LevelInfo
 	}
 
