@@ -44,7 +44,7 @@ func GinMiddleware() gin.HandlerFunc {
 		status := c.Writer.Status()
 		l.Info("request completed",
 			slog.Int("status", status),
-			slog.Duration("duration", duration),
+			slog.Duration("duration", time.Duration(duration.Microseconds())),
 			slog.String("handler", c.HandlerName()),
 		)
 	}

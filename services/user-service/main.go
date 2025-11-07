@@ -1,9 +1,9 @@
 package main
 
 import (
+	"io"
 	"log"
 
-	"rearatrox/event-booking-api/pkg/config"
 	"rearatrox/event-booking-api/pkg/logger"
 	"rearatrox/event-booking-api/services/user-service/db"
 
@@ -11,7 +11,6 @@ import (
 )
 
 func main() {
-	config.Load()
 
 	if err := logger.InitFromEnv(); err != nil {
 		log.Fatalf("failed to init logger: %v", err)
@@ -20,6 +19,7 @@ func main() {
 
 	db.InitDB()
 
+	gin.DefaultWriter = io.Discard
 	router := gin.Default()
 
 	RegisterRoutes(router)

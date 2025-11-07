@@ -27,21 +27,26 @@ func GetUsers(context *gin.Context) {
 }
 
 func GetUser(context *gin.Context) {
-
 	var user *models.User
 	userId, err := strconv.ParseInt(context.Param("id"), 10, 64)
 
+	l := logger.FromContext(context.Request.Context())
+	l.Debug("GetUser called")
+
 	if err != nil {
+		l.Warn("invalid request payload", "error", err)
 		context.JSON(http.StatusBadRequest, gin.H{"message": "could not parse event id.", "error": err.Error()})
 		return
 	}
 
 	user, err = models.GetUserById(userId)
 	if err != nil {
+		l.Error("could not fetch event", "error", err)
 		context.JSON(http.StatusInternalServerError, gin.H{"message": "could not fetch event.", "error": err.Error()})
 		return
 	}
 
+	l.Info("fetched user", "user", user)
 	//Response in JSON
 	context.JSON(http.StatusOK, user)
 }

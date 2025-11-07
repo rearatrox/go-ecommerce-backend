@@ -33,12 +33,14 @@ func GetEvent(context *gin.Context) {
 	var event *models.Event
 	eventId, err := strconv.ParseInt(context.Param("id"), 10, 64)
 
+	l := logger.FromContext(context.Request.Context())
+
 	if err != nil {
+		l.Warn("invalid request payload", "error", err)
 		context.JSON(http.StatusBadRequest, gin.H{"message": "could not parse event id.", "error": err.Error()})
 		return
 	}
 
-	l := logger.FromContext(context.Request.Context())
 	l.Debug("GetEvent called", "event_id", eventId)
 
 	event, err = models.GetEventByID(eventId)
@@ -84,12 +86,15 @@ func CreateEvent(context *gin.Context) {
 func UpdateEvent(context *gin.Context) {
 	var event *models.Event
 	eventId, err := strconv.ParseInt(context.Param("id"), 10, 64)
+
+	l := logger.FromContext(context.Request.Context())
+
 	if err != nil {
+		l.Warn("invalid request payload", "error", err)
 		context.JSON(http.StatusBadRequest, gin.H{"message": "could not parse event id to update event.", "error": err.Error()})
 		return
 	}
 
-	l := logger.FromContext(context.Request.Context())
 	l.Debug("UpdateEvent called", "event_id", eventId)
 
 	event, err = models.GetEventByID(eventId)
@@ -129,13 +134,14 @@ func UpdateEvent(context *gin.Context) {
 
 func DeleteEvent(context *gin.Context) {
 	eventId, err := strconv.ParseInt(context.Param("id"), 10, 64)
+	l := logger.FromContext(context.Request.Context())
 
 	if err != nil {
+		l.Warn("invalid request payload", "error", err)
 		context.JSON(http.StatusBadRequest, gin.H{"message": "could not parse event id to update event.", "error": err.Error()})
 		return
 	}
 
-	l := logger.FromContext(context.Request.Context())
 	l.Debug("DeleteEvent called", "event_id", eventId)
 
 	deleteEvent, err := models.GetEventByID(eventId)

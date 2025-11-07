@@ -10,6 +10,14 @@ import (
 
 func RegisterRoutes(router *gin.Engine) {
 	router.Use(logger.GinMiddleware())
+	router.NoRoute(func(c *gin.Context) {
+		// deinen slog-Logger aus dem Kontext holen
+		log := logger.FromContext(c.Request.Context())
+
+		log.Warn("unknown route")
+
+		c.JSON(404, gin.H{"error": "route not found"})
+	})
 
 	api := router.Group(os.Getenv("API_PREFIX"))
 	{

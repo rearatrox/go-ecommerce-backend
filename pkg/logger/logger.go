@@ -51,8 +51,8 @@ func Init(cfg Config) error {
 
 	switch strings.ToLower(cfg.Level) {
 	case "debug":
-		opts.Level = slog.LevelDebug
 		opts = &slog.HandlerOptions{AddSource: true}
+		opts.Level = slog.LevelDebug
 	case "info":
 		opts = &slog.HandlerOptions{AddSource: false, ReplaceAttr: suppressKeys}
 		opts.Level = slog.LevelInfo
