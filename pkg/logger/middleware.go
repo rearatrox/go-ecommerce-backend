@@ -25,8 +25,8 @@ func GinMiddleware() gin.HandlerFunc {
 
 		// create request scoped logger
 		l := slog.Default().With(
+			slog.String("req_id", reqID),
 			slog.Group("client",
-				slog.String("req_id", reqID),
 				slog.String("method", c.Request.Method),
 				slog.String("path", c.FullPath()),
 				slog.String("remote", c.ClientIP()),
