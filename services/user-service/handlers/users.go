@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"rearatrox/event-booking-api/pkg/logger"
 	"rearatrox/event-booking-api/services/user-service/models"
 	"strconv"
 
@@ -9,13 +10,18 @@ import (
 )
 
 func GetUsers(context *gin.Context) {
+	l := logger.FromContext(context.Request.Context())
+	l.Debug("GetUsers called")
 
 	users, err := models.GetUsers()
 
 	if err != nil {
+		l.Error("failed to fetch events", "error", err)
 		context.JSON(http.StatusInternalServerError, gin.H{"message": "could not fetch events.", "error": err.Error()})
 		return
 	}
+
+	l.Info("fetched users", "count", len(users))
 	//Response in JSON
 	context.JSON(http.StatusOK, users)
 }

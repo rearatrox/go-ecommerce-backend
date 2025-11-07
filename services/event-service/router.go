@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"rearatrox/event-booking-api/pkg/logger"
 	middleware "rearatrox/event-booking-api/pkg/middleware/auth"
 	"rearatrox/event-booking-api/services/event-service/handlers"
 
@@ -9,6 +10,9 @@ import (
 )
 
 func RegisterRoutes(router *gin.Engine) {
+
+	// request-logger middleware (adds request-scoped logger into context)
+	router.Use(logger.GinMiddleware())
 
 	api := router.Group(os.Getenv("API_PREFIX"))
 	{

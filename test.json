@@ -1,0 +1,17 @@
+{
+    "time": "2025-11-07T18:20:27.899002022Z",
+    "level": "INFO",
+    "source": {
+        "function": "main.RegisterRoutes.GinMiddleware.func1",
+        "file": "rearatrox/event-booking-api/pkg/logger/middleware.go",
+        "line": 43
+    },
+    "msg": "request completed",
+    "req_id": "caf64504-ff17-4456-b9bc-4ee82511e38b",
+    "method": "GET",
+    "path": "/api/v1/events",
+    "remote": "172.18.0.1",
+    "status": 200,
+    "duration": 451545,
+    "handler": "rearatrox/event-booking-api/services/event-service/handlers.GetEvents"
+}
