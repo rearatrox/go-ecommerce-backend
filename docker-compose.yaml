@@ -64,7 +64,7 @@ services:
         api-database:
           condition: service_healthy
       volumes:
-        - ./migrations:/migrations:ro
+        - ./pkg/db/migrations:/migrations:ro
       command:
         [
           "-path", "/migrations",
@@ -74,10 +74,6 @@ services:
       networks:
         - event-booking-api-network
       restart: "no"
-
-
-
-
 
 volumes:
   db-data:

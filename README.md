@@ -46,26 +46,43 @@ Jeder Service läuft als eigenständiger Container im Docker-Compose-Setup und n
 
 ---
 
-## API-Routen (aktuell verfügbar)
+## ⚙️ Umgebungsvariablen (`.env.example`)
 
-### 👤 User-Service (`:USERSERVICE_PORT`)
-| Methode | Route | Beschreibung |
-|----------|--------|--------------|
-| `GET` | `API_PFREIX/users` | Listet alle User auf |
-| `GET` | `API_PFREIX/users/:id` | Zeigt einen bestimmten User |
-| `POST` | `API_PFREIX/users/signup` | Erstellt einen neuen Benutzer |
-| `POST` | `API_PFREIX/users/login` | Authentifiziert einen Benutzer |
+| Variable | Beschreibung | Beispielwert |
+|-----------|---------------|---------------|
+| **API_PREFIX** | Gemeinsamer API-Präfix für alle Services | `/api/v1` |
+| **JWT_SECRET** | Geheimschlüssel für JWT-Token-Signierung | `supersecret` |
 
-### Event-Service (`:EVENTSERVICE_PORT`)
-| Methode | Route | Beschreibung |
-|----------|--------|--------------|
-| `POST` | `API_PFREIX/events` | Erstellt ein neues Event |
-| `GET` | `API_PFREIX/events` | Listet alle Events auf |
-| `GET` | `API_PFREIX/events/:id` | Zeigt ein bestimmtes Event |
-| `PUT` | `API_PFREIX/events/:id` | Aktualisiert ein bestimmtes Event (Auth) |
-| `DELETE` | `API_PFREIX/events/:id` | Löscht ein bestimmtes Event (Auth) |
-| `POST` | `API_PFREIX/events/:id/register` | Bucht ein Event für einen Benutzer (Auth) |
-| `DELETE` | `API_PFREIX/events/:id/delete` | Löscht ein Event für einen Benutzer (Auth) |
+### 🪵 Logger
+
+| Variable | Beschreibung | Beispielwert |
+|-----------|---------------|---------------|
+| **LOG_LEVEL** | Log-Level (z. B. `debug`, `info`, `warn`, `error`) | `info` |
+| **LOG_FORMAT** | Format der Logs (`text` oder `json`) | `json` |
+| **LOG_OUTPUT** | Zielausgabe der Logs (`stdout`, `file`, etc.) | `stdout` |
+| **REQUEST_ID_HEADER** | Header-Name für Request-IDs (Tracing) | `X-Request-Id` |
+
+### 🧩 Services
+
+| Variable | Beschreibung | Beispielwert |
+|-----------|---------------|---------------|
+| **EVENTSERVICE_PORT** | Externer Port des Event-Service | `8081` |
+| **USERSERVICE_PORT** | Externer Port des User-Service | `8082` |
+
+### 🗄️ Datenbank
+
+| Variable | Beschreibung | Beispielwert |
+|-----------|---------------|---------------|
+| **DB_USERNAME** | Benutzername für PostgreSQL | `admin` |
+| **DB_PASSWORD** | Passwort für PostgreSQL | `password123` |
+| **DB_NAME** | Name der Datenbank | `api_db` |
+| **DB_PORT** | Port der PostgreSQL-Instanz | `5432` |
+| **DB_SSLMODE** | SSL-Modus der Verbindung (`disable`, `require`, etc.) | `disable` |
+
+---
+
+💡 **Hinweis:**  
+Die DATABASE_URL wird automatisch mit den obigen Angaben generiert
 
 ---
 

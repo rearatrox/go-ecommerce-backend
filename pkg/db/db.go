@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 
@@ -26,6 +25,5 @@ func InitDB() {
 	if err := DB.Ping(Ctx); err != nil {
 		log.Fatal("Unable to ping database:", err)
 	}
-
-	fmt.Println("Connected to PostgreSQL database!")
+	log.Println("successfully connected to database")
 }
