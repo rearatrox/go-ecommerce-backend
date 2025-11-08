@@ -1,10 +1,9 @@
 package models
 
 import (
-	"fmt"
 	"time"
 
-	"rearatrox/event-booking-api/services/event-service/db"
+	"rearatrox/event-booking-api/pkg/db"
 )
 
 type Event struct {
@@ -16,124 +15,65 @@ type Event struct {
 	CreatorID   int64
 }
 
-var events = []Event{}
+// events slice removed; models now use database storage.
 
 func (e *Event) SaveEvent() error {
-
-	query := `
-	INSERT INTO events (name, description, location, dateTime, creator_id)
-	VALUES (?, ?, ?, ?, ?)
-	`
-
-	statement, err := db.DB.Prepare(query)
-
-	if err != nil {
+	query := `INSERT INTO events (name, description, location, datetime, creator_id) VALUES ($1,$2,$3,$4,$5) RETURNING id`
+	if err := db.DB.QueryRow(db.Ctx, query, e.Name, e.Description, e.Location, e.DateTime, e.CreatorID).Scan(&e.ID); err != nil {
 		return err
 	}
-
-	defer statement.Close()
-	result, err := statement.Exec(e.Name, e.Description, e.Location, e.DateTime, e.CreatorID)
-
-	if err != nil {
-		return err
-	}
-
-	id, err := result.LastInsertId()
-	e.ID = id
-	return err
+	return nil
 }
 
 func (e *Event) UpdateEvent() error {
-	query := `UPDATE events SET name= ?, description=?, location=?,dateTime=?,creator_id=? WHERE id=?`
-	statement, err := db.DB.Prepare(query)
-
-	if err != nil {
-		return err
-	}
-
-	defer statement.Close()
-	_, err = statement.Exec(e.Name, e.Description, e.Location, e.DateTime, e.CreatorID, e.ID)
-
+	query := `UPDATE events SET name=$1, description=$2, location=$3, datetime=$4, creator_id=$5 WHERE id=$6`
+	_, err := db.DB.Exec(db.Ctx, query, e.Name, e.Description, e.Location, e.DateTime, e.CreatorID, e.ID)
 	return err
 }
 
 func (e *Event) DeleteEvent() error {
-	query := `DELETE from events WHERE id=?`
-	statement, err := db.DB.Prepare(query)
-
-	if err != nil {
-		return err
-	}
-
-	defer statement.Close()
-	_, err = statement.Exec(e.ID)
-
+	query := `DELETE FROM events WHERE id=$1`
+	_, err := db.DB.Exec(db.Ctx, query, e.ID)
 	return err
 }
 
 func GetEvents() ([]Event, error) {
-
-	query := `SELECT * FROM events`
-	rows, err := db.DB.Query(query)
-
+	query := `SELECT id, name, description, location, datetime, creator_id FROM events`
+	rows, err := db.DB.Query(db.Ctx, query)
 	if err != nil {
 		return nil, err
 	}
-
 	defer rows.Close()
 
 	var events []Event
-
 	for rows.Next() {
 		var event Event
-		err := rows.Scan(&event.ID, &event.Name, &event.Description, &event.Location, &event.DateTime, &event.CreatorID)
-		if err != nil {
+		if err := rows.Scan(&event.ID, &event.Name, &event.Description, &event.Location, &event.DateTime, &event.CreatorID); err != nil {
 			return nil, err
 		}
-
 		events = append(events, event)
 	}
-
 	return events, nil
 }
 
 func GetEventByID(id int64) (*Event, error) {
 	var event Event
-	query := `SELECT * FROM events where ID = ?`
-
-	res := db.DB.QueryRow(query, id)
-
-	err := res.Scan(&event.ID, &event.Name, &event.Description, &event.Location, &event.DateTime, &event.CreatorID)
-	if err != nil {
+	query := `SELECT id, name, description, location, datetime, creator_id FROM events WHERE id=$1`
+	row := db.DB.QueryRow(db.Ctx, query, id)
+	if err := row.Scan(&event.ID, &event.Name, &event.Description, &event.Location, &event.DateTime, &event.CreatorID); err != nil {
 		return nil, err
 	}
-
 	return &event, nil
 }
 
 func (e Event) Register(userId int64) error {
-	query := `INSERT INTO event_registrations(event_id, user_id) VALUES (?, ?)`
-	statement, err := db.DB.Prepare(query)
-
-	if err != nil {
-		fmt.Println("Prepare failed")
-		return err
-	}
-
-	defer statement.Close()
-	_, err = statement.Exec(e.ID, userId)
+	query := `INSERT INTO event_registrations(event_id, user_id) VALUES ($1, $2)`
+	_, err := db.DB.Exec(db.Ctx, query, e.ID, userId)
 	return err
 }
 
 func (e Event) DeleteRegistration(userId int64) error {
-	query := `DELETE FROM event_registrations where event_id = ? and user_id = ?`
-	statement, err := db.DB.Prepare(query)
-
-	if err != nil {
-		return err
-	}
-
-	defer statement.Close()
-	_, err = statement.Exec(e.ID, userId)
+	query := `DELETE FROM event_registrations WHERE event_id=$1 AND user_id=$2`
+	_, err := db.DB.Exec(db.Ctx, query, e.ID, userId)
 	return err
 }

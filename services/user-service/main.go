@@ -4,8 +4,8 @@ import (
 	"io"
 	"log"
 
+	"rearatrox/event-booking-api/pkg/db"
 	"rearatrox/event-booking-api/pkg/logger"
-	"rearatrox/event-booking-api/services/user-service/db"
 
 	"github.com/gin-gonic/gin"
 )
