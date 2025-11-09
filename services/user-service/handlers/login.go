@@ -9,6 +9,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Login godoc
+// @Summary      Authenticate user
+// @Description  Authenticate a user and return a JWT token
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Param        credentials  body      models.User  true  "User credentials (email + password)"
+// @Success      200          {object}  map[string]interface{}
+// @Failure      400          {object}  map[string]interface{}
+// @Failure      401          {object}  map[string]interface{}
+// @Failure      500          {object}  map[string]interface{}
+// @Router       /users/login [post]
 func Login(context *gin.Context) {
 	var user models.User
 	l := logger.FromContext(context.Request.Context())

@@ -84,9 +84,31 @@ Die DATABASE_URL wird automatisch mit den obigen Angaben generiert
 
 ---
 
-## Swagger
+## 📘 Swagger API Dokumentation
 
-Eine Integration mit [**swaggo/gin-swagger**](https://github.com/swaggo/gin-swagger) ist vorgesehen.  
+Jeder Service verfügt über eine eigene Swagger-Dokumentation auf Basis von [swaggo/gin-swagger](https://github.com/swaggo/gin-swagger).
+
+Die Swagger-Dateien werden beim Build automatisch generiert und ermöglichen eine interaktive Dokumentation aller API-Endpunkte.
+
+---
+
+### 🧩 Event-Service
+
+- **Port:** `${EVENTSERVICE_PORT}` (Standard: `8081`)  
+- **Swagger-URL:** [http://localhost:{EVENTSERVICE_PORT}/api/v1/events/swagger/index.html#/](http://localhost:8082/api/v1/events/swagger/index.html#/)
+
+---
+
+### 👤 User-Service
+
+- **Port:** `${USERSERVICE_PORT}` (Standard: `8082`)  
+- **Swagger-URL:** [http://localhost:{USERSERVICE_PORT}/api/v1/users/swagger/index.html#/](http://localhost:8082/api/v1/users/swagger/index.html#/)
+
+---
+
+> 💡 **Hinweis:**  
+> Die Ports werden dynamisch über die jeweiligen ENV-Variablen (`EVENTSERVICE_PORT`, `USERSERVICE_PORT`) gesetzt,  
+> damit die Swagger-UI in jedem Umfeld (lokal oder Container) automatisch den korrekten Host verwendet.
 
 ---
 

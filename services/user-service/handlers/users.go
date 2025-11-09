@@ -9,7 +9,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// GetUsers godoc
+// @Summary      Get all users
+// @Description  Retrieve a list of all users
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Success      200  {array}   models.User
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /users [get]
 func GetUsers(context *gin.Context) {
+
 	l := logger.FromContext(context.Request.Context())
 	l.Debug("GetUsers called")
 
@@ -26,7 +36,19 @@ func GetUsers(context *gin.Context) {
 	context.JSON(http.StatusOK, users)
 }
 
+// GetUser godoc
+// @Summary      Get single user by ID
+// @Description  Get details of a user by its ID
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "User ID"
+// @Success      200  {object}  models.User
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /users/{id} [get]
 func GetUser(context *gin.Context) {
+
 	var user *models.User
 	userId, err := strconv.ParseInt(context.Param("id"), 10, 64)
 

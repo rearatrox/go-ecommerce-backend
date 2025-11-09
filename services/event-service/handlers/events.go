@@ -10,7 +10,16 @@ import (
 )
 
 // Event-Handlers, die beim Aufruf von Routen /events aufgerufen werden (Verarbeitung der Requests)
-
+// GetEvents godoc
+// @Summary      Get all events
+// @Description  Get all event information of all events
+// @Tags         Events
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  []models.Event
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /events [get]
 func GetEvents(context *gin.Context) {
 
 	l := logger.FromContext(context.Request.Context())
@@ -29,6 +38,17 @@ func GetEvents(context *gin.Context) {
 	context.JSON(http.StatusOK, events)
 }
 
+// GetEvent godoc
+// @Summary      Get single event by ID
+// @Description  Get details of an event by its ID
+// @Tags         Events
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "Event ID"
+// @Success      200  {object}  models.Event
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /events/{id} [get]
 func GetEvent(context *gin.Context) {
 	var event *models.Event
 	eventId, err := strconv.ParseInt(context.Param("id"), 10, 64)
@@ -55,6 +75,19 @@ func GetEvent(context *gin.Context) {
 	context.JSON(http.StatusOK, event)
 }
 
+// CreateEvent godoc
+// @Summary      Create a new event
+// @Description  Create event. Requires authentication.
+// @Tags         Events
+// @Accept       json
+// @Produce      json
+// @Param        event  body      models.Event  true  "Event payload"
+// @Success      201    {object}  map[string]interface{}
+// @Failure      400    {object}  map[string]interface{}
+// @Failure      401    {object}  map[string]interface{}
+// @Failure      500    {object}  map[string]interface{}
+// @Security     JWT
+// @Router       /events [post]
 func CreateEvent(context *gin.Context) {
 
 	l := logger.FromContext(context.Request.Context())
@@ -83,6 +116,20 @@ func CreateEvent(context *gin.Context) {
 	context.JSON(http.StatusCreated, gin.H{"message": "Event created", "event": event})
 }
 
+// UpdateEvent godoc
+// @Summary      Update an existing event
+// @Description  Update event by ID. Requires authentication and ownership.
+// @Tags         Events
+// @Accept       json
+// @Produce      json
+// @Param        id     path      int           true  "Event ID"
+// @Param        event  body      models.Event  true  "Updated event payload"
+// @Success      200    {object}  map[string]interface{}
+// @Failure      400    {object}  map[string]interface{}
+// @Failure      401    {object}  map[string]interface{}
+// @Failure      500    {object}  map[string]interface{}
+// @Security     JWT
+// @Router       /events/{id} [put]
 func UpdateEvent(context *gin.Context) {
 	var event *models.Event
 	eventId, err := strconv.ParseInt(context.Param("id"), 10, 64)
@@ -132,6 +179,19 @@ func UpdateEvent(context *gin.Context) {
 	context.JSON(http.StatusOK, gin.H{"message": "updated event successfully", "updatedEvent": updatedEvent})
 }
 
+// DeleteEvent godoc
+// @Summary      Delete an event
+// @Description  Delete event by ID. Requires authentication and ownership.
+// @Tags         Events
+// @Accept       json
+// @Produce      json
+// @Param        id   path  int  true  "Event ID"
+// @Success      200  {object}  map[string]interface{}
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      401  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Security     JWT
+// @Router       /events/{id} [delete]
 func DeleteEvent(context *gin.Context) {
 	eventId, err := strconv.ParseInt(context.Param("id"), 10, 64)
 	l := logger.FromContext(context.Request.Context())

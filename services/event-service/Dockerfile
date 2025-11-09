@@ -9,7 +9,7 @@ RUN go mod download
 # Rest des Repos (wegen imports aus /pkg etc.)
 COPY . .
 
-# Nur den user-service bauen
+# Nur den event-service bauen
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     go build -trimpath -ldflags="-s -w" \
     -o /out/app ./services/event-service

@@ -4,8 +4,13 @@ import (
 	"os"
 	"rearatrox/event-booking-api/pkg/logger"
 	"rearatrox/event-booking-api/services/user-service/handlers"
+	"strings"
+
+	docs "rearatrox/event-booking-api/services/user-service/docs"
 
 	"github.com/gin-gonic/gin"
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func RegisterRoutes(router *gin.Engine) {
@@ -19,8 +24,23 @@ func RegisterRoutes(router *gin.Engine) {
 		c.JSON(404, gin.H{"error": "route not found"})
 	})
 
-	api := router.Group(os.Getenv("API_PREFIX"))
+	// read API prefix, trim spaces and provide a sensible default
+	apiPrefix := strings.TrimSpace(os.Getenv("API_PREFIX"))
+	if apiPrefix == "" {
+		apiPrefix = "/api/v1"
+	}
+
+	port := os.Getenv("USERSERVICE_PORT")
+	if port == "" {
+		port = "8082"
+	}
+	docs.SwaggerInfo.Host = "localhost:" + port
+	docs.SwaggerInfo.BasePath = apiPrefix
+
+	api := router.Group(apiPrefix)
 	{
+		// make sure the swagger UI knows where to fetch the generated spec
+		api.GET("/users/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 		api.GET("/users", handlers.GetUsers)
 		api.GET("/users/:id", handlers.GetUser)
 
