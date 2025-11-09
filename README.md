@@ -78,8 +78,8 @@ Jeder Service läuft als eigenständiger Container im Docker-Compose-Setup und n
 | **DB_PORT** | Port der PostgreSQL-Instanz | `5432` |
 | **DB_SSLMODE** | SSL-Modus der Verbindung (`disable`, `require`, etc.) | `disable` |
 
-💡 **Hinweis:**  
-Die DATABASE_URL wird automatisch mit den obigen Angaben generiert
+> 💡 **Hinweis:**  
+> Die DATABASE_URL wird automatisch mit den obigen Angaben generiert
 
 ---
 
