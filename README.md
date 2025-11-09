@@ -31,8 +31,7 @@ Jeder Service läuft als eigenständiger Container im Docker-Compose-Setup und n
 2. **.env-Dateien anpassen**  
    Erstelle aus der `.env.example` eine `.env`-Datei und passe sie an:
    ```
-   cp .env.example user-service/.env
-   cp .env.example event-service/.env
+   cp .env.example.env
    ```
 
 3. **Container starten**
@@ -90,21 +89,17 @@ Jeder Service verfügt über eine eigene Swagger-Dokumentation auf Basis von [sw
 
 Die Swagger-Dateien werden beim Build automatisch generiert und ermöglichen eine interaktive Dokumentation aller API-Endpunkte.
 
----
-
 ### 🧩 Event-Service
 
 - **Port:** `${EVENTSERVICE_PORT}` (Standard: `8081`)  
-- **Swagger-URL:** [http://localhost:{EVENTSERVICE_PORT}/api/v1/events/swagger/index.html#/](http://localhost:8082/api/v1/events/swagger/index.html#/)
+- **Swagger-URL:** [http://localhost:{EVENTSERVICE_PORT}/api/v1/events/swagger/index.html#/](http://localhost:8081/api/v1/events/swagger/index.html#/)
 
----
 
 ### 👤 User-Service
 
 - **Port:** `${USERSERVICE_PORT}` (Standard: `8082`)  
 - **Swagger-URL:** [http://localhost:{USERSERVICE_PORT}/api/v1/users/swagger/index.html#/](http://localhost:8082/api/v1/users/swagger/index.html#/)
 
----
 
 > 💡 **Hinweis:**  
 > Die Ports werden dynamisch über die jeweiligen ENV-Variablen (`EVENTSERVICE_PORT`, `USERSERVICE_PORT`) gesetzt,  
