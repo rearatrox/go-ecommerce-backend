@@ -1,7 +1,0 @@
-POST http://127.0.0.1:8082/api/v1/signup
-Content-Type: application/json
-
-{
-  "email": "hauschild-tim@t-online.de",
-  "password": "Test123"
-}

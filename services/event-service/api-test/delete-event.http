@@ -1,2 +1,0 @@
-DELETE http://127.0.0.1:8081/api/v1/events/1
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImhhdXNjaGlsZC10aW1AdC1vbmxpbmUuZGUiLCJleHAiOjE3NjIxOTY1NzcsInVzZXJJZCI6MX0.08kjBRc3rzuCuVA50FHAJJ8sD-jNVhrgK-fj2KV5YwM
