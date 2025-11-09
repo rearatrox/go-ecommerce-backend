@@ -39,13 +39,17 @@ func RegisterRoutes(router *gin.Engine) {
 
 	api := router.Group(apiPrefix)
 	{
+		authenticated := api.Group("/")
+		{
+			authenticated.GET("/users", handlers.GetUsers)
+			authenticated.GET("/users/:id", handlers.GetUser)
+		}
+
 		// make sure the swagger UI knows where to fetch the generated spec
 		api.GET("/users/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
-		api.GET("/users", handlers.GetUsers)
-		api.GET("/users/:id", handlers.GetUser)
 
-		api.POST("/users/signup", handlers.Signup)
-		api.POST("/users/login", handlers.Login)
+		api.POST("/auth/signup", handlers.Signup)
+		api.POST("/auth/login", handlers.Login)
 	}
 
 }

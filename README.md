@@ -1,12 +1,12 @@
-# Go Event Booking API
+# Go E-Commerce Backend
 
-Ein modulares **Event-Buchungssystem in Go**, bestehend aus mehreren Microservices.  
+Ein modulares **E-Commerce Backend in Go**, bestehend aus mehreren Microservices.  
 Derzeit umfasst das Projekt folgende Services:
 
 - **User-Service** – Authentifizierung und Registrierung  
 - **Event-Service** – Verwaltung von Events und Teilnehmer-Buchungen  
 
-Jeder Service läuft als eigenständiger Container im Docker-Compose-Setup und nutzt eine eigene SQLite-Datenbank (PostgreSQL-Unterstützung ist geplant).
+Jeder Service läuft als eigenständiger Container im Docker-Compose-Setup und nutzt eine gemeinsame Postgres Datenbank.
 
 ---
 
@@ -16,7 +16,7 @@ Jeder Service läuft als eigenständiger Container im Docker-Compose-Setup und n
 - Gemeinsame `.env`-Konfiguration (über `.env.example`)
 - Multi-Service-Setup mit **Docker Compose**
 - Bereit für zukünftige **Kubernetes-Deployments**
-- Optionale **Swagger-Dokumentation** (in Planung)
+- Pro Service gibt es eine eigene **Swagger-Dokumentation**
 
 ---
 
@@ -24,8 +24,8 @@ Jeder Service läuft als eigenständiger Container im Docker-Compose-Setup und n
 
 1. **Repository klonen**
    ```
-   git clone https://github.com/rearatrox/go-event-booking-api.git
-   cd go-event-booking-api
+   git clone https://github.com/rearatrox/go-ecommerce-backend.git
+   cd go-ecommerce-backend
    ```
 
 2. **.env-Dateien anpassen**  
