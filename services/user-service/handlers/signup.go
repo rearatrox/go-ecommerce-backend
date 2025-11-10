@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"net/http"
-	"rearatrox/event-booking-api/pkg/logger"
-	"rearatrox/event-booking-api/services/user-service/models"
+	"rearatrox/go-ecommerce-backend/pkg/logger"
+	"rearatrox/go-ecommerce-backend/services/user-service/models"
 
 	"github.com/gin-gonic/gin"
 )

@@ -4,11 +4,11 @@ import (
 	"os"
 	"strings"
 
-	"rearatrox/event-booking-api/pkg/logger"
-	middleware "rearatrox/event-booking-api/pkg/middleware/auth"
-	"rearatrox/event-booking-api/services/product-service/handlers"
+	"rearatrox/go-ecommerce-backend/pkg/logger"
+	middleware "rearatrox/go-ecommerce-backend/pkg/middleware/auth"
+	"rearatrox/go-ecommerce-backend/services/product-service/handlers"
 
-	docs "rearatrox/event-booking-api/services/product-service/docs"
+	docs "rearatrox/go-ecommerce-backend/services/product-service/docs"
 
 	"github.com/gin-gonic/gin"
 	swaggerfiles "github.com/swaggo/files"
@@ -44,23 +44,23 @@ func RegisterRoutes(router *gin.Engine) {
 	api := router.Group(apiPrefix)
 	{
 		// make sure the swagger UI knows where to fetch the generated spec
-		api.GET("/events/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
-		api.GET("/events", handlers.GetEvents)
-		api.GET("/events/:id", handlers.GetEvent)
+		api.GET("/products/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+		api.GET("/products", handlers.GetProducts)
+		api.GET("/products/:id", handlers.GetProduct)
 
 		authenticated := api.Group("/")
 		{
 			authenticated.Use(middleware.Authenticate)
-			authenticated.POST("/events/:id/register", handlers.AddRegistrationForEvent)
-			authenticated.DELETE("/events/:id/delete", handlers.DeleteRegistrationForEvent)
+			//authenticated.POST("/products/:id/register", handlers.AddRegistrationForEvent)
+			//authenticated.DELETE("/products/:id/delete", handlers.DeleteRegistrationForEvent)
 
 			// admin-only
 			admin := authenticated.Group("/admin")
 			admin.Use(middleware.Authorize("admin"))
 			{
-				admin.POST("/events", handlers.CreateEvent)
-				admin.PUT("/events/:id", handlers.UpdateEvent)
-				admin.DELETE("/events/:id", handlers.DeleteEvent)
+				admin.POST("/products", handlers.CreateProduct)
+				admin.PUT("/products/:id", handlers.UpdateProduct)
+				admin.DELETE("/products/:id", handlers.DeleteProduct)
 			}
 		}
 

@@ -1,4 +1,4 @@
-module rearatrox/event-booking-api
+module rearatrox/go-ecommerce-backend
 
 go 1.25.3
 

@@ -2,8 +2,8 @@ package models
 
 import (
 	"errors"
-	"rearatrox/event-booking-api/pkg/db"
-	"rearatrox/event-booking-api/services/user-service/utils"
+	"rearatrox/go-ecommerce-backend/pkg/db"
+	"rearatrox/go-ecommerce-backend/services/user-service/utils"
 )
 
 type User struct {
