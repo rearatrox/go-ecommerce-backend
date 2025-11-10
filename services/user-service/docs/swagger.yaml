@@ -1,16 +1,55 @@
 basePath: API_PREFIX
 definitions:
+  models.Address:
+    properties:
+      city:
+        example: Berlin
+        type: string
+      country:
+        example: Germany
+        type: string
+      fullName:
+        example: Max Mustermann
+        type: string
+      isDefault:
+        example: true
+        type: boolean
+      postalCode:
+        example: "12345"
+        type: string
+      street:
+        example: Musterstraße 123
+        type: string
+      type:
+        example: shipping
+        type: string
+    required:
+    - city
+    - country
+    - fullName
+    - postalCode
+    - street
+    - type
+    type: object
   models.User:
     properties:
       email:
+        example: user@example.com
         type: string
-      id:
-        format: int64
-        type: integer
-      password:
+      firstName:
+        example: Max
+        type: string
+      lastName:
+        example: Mustermann
+        type: string
+      phone:
+        example: +49 123 456789
         type: string
       role:
+        example: user
         type: string
+    required:
+    - email
     type: object
 host: localhost:USERSERVICE_PORT
 info:
@@ -150,4 +189,279 @@ paths:
       summary: Get single user by ID
       tags:
       - Users
+  /users/me:
+    get:
+      consumes:
+      - application/json
+      description: Get profile information of the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get own profile
+      tags:
+      - Profile
+    put:
+      consumes:
+      - application/json
+      description: Update profile information of the authenticated user (firstName,
+        lastName, phone)
+      parameters:
+      - description: 'Profile payload - Example: {\'
+        in: body
+        name: profile
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update own profile
+      tags:
+      - Profile
+  /users/me/addresses:
+    get:
+      consumes:
+      - application/json
+      description: Get all addresses of the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Address'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get user's addresses
+      tags:
+      - Addresses
+    post:
+      consumes:
+      - application/json
+      description: Create a new address for the authenticated user
+      parameters:
+      - description: Address payload
+        in: body
+        name: address
+        required: true
+        schema:
+          $ref: '#/definitions/models.Address'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new address
+      tags:
+      - Addresses
+  /users/me/addresses/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an address of the authenticated user
+      parameters:
+      - description: Address ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete an address
+      tags:
+      - Addresses
+    get:
+      consumes:
+      - application/json
+      description: Get details of a specific address of the authenticated user
+      parameters:
+      - description: Address ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Address'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get single address by ID
+      tags:
+      - Addresses
+    put:
+      consumes:
+      - application/json
+      description: Update an existing address of the authenticated user
+      parameters:
+      - description: Address ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated address payload
+        in: body
+        name: address
+        required: true
+        schema:
+          $ref: '#/definitions/models.Address'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update an address
+      tags:
+      - Addresses
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"
