@@ -51,6 +51,8 @@ func RegisterRoutes(router *gin.Engine) {
 		authenticated := api.Group("/")
 		authenticated.Use(middleware.Authenticate)
 		{
+			// Auth endpoints
+			authenticated.POST("/auth/logout", handlers.Logout)
 
 			// Profile endpoints
 			authenticated.GET("/users/me", handlers.GetMyProfile)

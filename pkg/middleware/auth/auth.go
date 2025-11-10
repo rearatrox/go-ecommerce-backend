@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"rearatrox/go-ecommerce-backend/pkg/db"
 	"rearatrox/go-ecommerce-backend/pkg/logger"
 	"strings"
 
@@ -28,10 +29,10 @@ func Authenticate(context *gin.Context) {
 		return
 	}
 
-	userId, userRole, err := ValidateToken(token)
+	userId, userRole, err := ValidateToken(token, db.DB, db.Ctx)
 	if err != nil {
-		l.Error("Not authorized")
-		context.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "Not authorized"})
+		l.Error("Not authorized", "error", err)
+		context.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "Not authorized", "error": err.Error()})
 		return
 	}
 
