@@ -23,10 +23,11 @@ type CheckStockResponse struct {
 
 // checkStockAvailability calls the product-service to check stock
 func checkStockAvailability(productID int64, quantity int) (*CheckStockResponse, error) {
-	productServiceURL := "http://product-service:" + os.Getenv("PRODUCTSERVICE_PORT")
-	if productServiceURL == "" {
-		productServiceURL = "http://product-service:8080" // Default for docker-compose
+	port := os.Getenv("PRODUCTSERVICE_PORT")
+	if port == "" {
+		port = "8081" // Default product-service port
 	}
+	productServiceURL := fmt.Sprintf("http://product-service:%s", port)
 
 	apiPrefix := os.Getenv("API_PREFIX")
 	if apiPrefix == "" {
