@@ -6,6 +6,7 @@ Currently, the project includes the following services:
 - **User-Service** – Authentication, registration, profile management, and addresses  
 - **Product-Service** – Product management with categories and many-to-many relationships  
 - **Cart-Service** – Shopping cart management with automatic price snapshot functionality  
+- **Order-Service** – Order processing and history with address snapshots
 
 Each service runs as an independent container in the Docker Compose setup and uses a shared PostgreSQL database with automatic migrations.
 
@@ -48,7 +49,15 @@ Each service runs as an independent container in the Docker Compose setup and us
 - Status management (active, ordered, abandoned)
 - Join with product data for complete item information
 
-### 🛠️ Developer Experience
+### � Order-Service
+- Create orders from active cart with automatic status management
+- Order history with complete item and address details
+- Price and product name snapshots at order time
+- Status tracking (pending, confirmed, shipped, delivered, cancelled)
+- Address linking (shipping and billing)
+- Prepared for payment service integration
+
+### �🛠️ Developer Experience
 - Structured **logging** with slog and context propagation
 - **Hot-reload** possible during development
 - Integrated **pgweb** for database inspection (port 8088)
@@ -79,12 +88,14 @@ Each service runs as an independent container in the Docker Compose setup and us
    - Product-Service: [http://localhost:8081](http://localhost:8081)
    - User-Service: [http://localhost:8082](http://localhost:8082)
    - Cart-Service: [http://localhost:8083](http://localhost:8083)
+   - Order-Service: [http://localhost:8084](http://localhost:8084)
    - pgweb (DB-Admin): [http://localhost:8088](http://localhost:8088)
 
 5. **Open Swagger UI**
    - Product-Service Swagger: [http://localhost:8081/api/v1/products/swagger/index.html](http://localhost:8081/api/v1/products/swagger/index.html)
    - User-Service Swagger: [http://localhost:8082/api/v1/users/swagger/index.html](http://localhost:8082/api/v1/users/swagger/index.html)
-   - Cart-Service Swagger: [http://localhost:8083/api/v1/cart/swagger/index.html](http://localhost:8083/api/v1/cart/swagger/index.html) 
+   - Cart-Service Swagger: [http://localhost:8083/api/v1/cart/swagger/index.html](http://localhost:8083/api/v1/cart/swagger/index.html)
+   - Order-Service Swagger: [http://localhost:8084/api/v1/orders/swagger/index.html](http://localhost:8084/api/v1/orders/swagger/index.html) 
 
 ---
 
@@ -111,6 +122,7 @@ Each service runs as an independent container in the Docker Compose setup and us
 | **PRODUCTSERVICE_PORT** | External port of Product-Service | `8081` |
 | **USERSERVICE_PORT** | External port of User-Service | `8082` |
 | **CARTSERVICE_PORT** | External port of Cart-Service | `8083` |
+| **ORDERSERVICE_PORT** | External port of Order-Service | `8084` |
 
 ### 🗄️ Database
 
@@ -148,6 +160,11 @@ The Swagger files are automatically generated during build and enable interactiv
 - **Port:** `${CARTSERVICE_PORT}` (default: `8083`)  
 - **Swagger-URL:** [http://localhost:8083/api/v1/cart/swagger/index.html](http://localhost:8083/api/v1/cart/swagger/index.html)
 
+### 📦 Order-Service
+
+- **Port:** `${ORDERSERVICE_PORT}` (default: `8084`)  
+- **Swagger-URL:** [http://localhost:8084/api/v1/orders/swagger/index.html](http://localhost:8084/api/v1/orders/swagger/index.html)
+
 
 > 💡 **Authentication:**  
 > Protected endpoints require a JWT token in the `Authorization` header: `Bearer <token>`  
@@ -178,6 +195,10 @@ The project uses **PostgreSQL** with automatic migrations via `golang-migrate`.
 - `carts` - Shopping carts with user assignment and status (active/ordered/abandoned)
 - `cart_items` - Products in cart with quantity and price snapshot
 
+**Order-Service:**
+- `orders` - Orders with status, total, and address references
+- `order_items` - Order items with product snapshots (name, price) at order time
+
 ### Migrations
 
 All migrations are located under `/pkg/db/migrations/` and are automatically executed at startup:
@@ -196,6 +217,8 @@ All migrations are located under `/pkg/db/migrations/` and are automatically exe
 0011_add_personal_info_to_users.up.sql             # Personal user info
 0012_create_carts_table.up.sql                      # Shopping carts
 0013_create_cart_items_table.up.sql                 # Cart items
+0014_create_orders_table.up.sql                     # Orders
+0015_create_order_items_table.up.sql                # Order items
 ```
 
 > 💡 **pgweb:**  
@@ -209,13 +232,13 @@ All migrations are located under `/pkg/db/migrations/` and are automatically exe
 - [x] User-Service with auth and profile management
 - [x] Product-Service with categories
 - [x] Cart-Service with price snapshots
+- [x] Order-Service with address snapshots and status management
 - [x] JWT-based authentication
 - [x] Role-Based Access Control (Admin/User)
 - [x] Automatic database migrations
 - [x] Swagger documentation for all services
 
 ### 🔄 Planned (Priority)
-- [ ] **Order-Service** - Create orders from cart
 - [ ] **Stock validation** - Check if enough inventory available when adding to cart
 - [ ] **Payment integration** - Stripe/PayPal for payments
 - [ ] **Inventory management** - Stock reservation and release
@@ -263,7 +286,8 @@ go-ecommerce-backend/
 ├── services/
 │   ├── user-service/             # User, Auth, Addresses
 │   ├── product-service/          # Products, Categories
-│   └── cart-service/             # Shopping cart
+│   ├── cart-service/             # Shopping cart
+│   └── order-service/            # Orders & order history
 ├── docker-compose.yaml           # Multi-service setup
 ├── .env.example                  # Environment template
 └── README.md
