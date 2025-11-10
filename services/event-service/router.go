@@ -51,12 +51,17 @@ func RegisterRoutes(router *gin.Engine) {
 		authenticated := api.Group("/")
 		{
 			authenticated.Use(middleware.Authenticate)
-			authenticated.POST("/events", handlers.CreateEvent)
-			authenticated.PUT("/events/:id", handlers.UpdateEvent)
-			authenticated.DELETE("/events/:id", handlers.DeleteEvent)
-
 			authenticated.POST("/events/:id/register", handlers.AddRegistrationForEvent)
 			authenticated.DELETE("/events/:id/delete", handlers.DeleteRegistrationForEvent)
+
+			// admin-only
+			admin := authenticated.Group("/admin")
+			admin.Use(middleware.Authorize("admin"))
+			{
+				admin.POST("/events", handlers.CreateEvent)
+				admin.PUT("/events/:id", handlers.UpdateEvent)
+				admin.DELETE("/events/:id", handlers.DeleteEvent)
+			}
 		}
 
 	}

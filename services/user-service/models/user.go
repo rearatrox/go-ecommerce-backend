@@ -10,10 +10,11 @@ type User struct {
 	ID       int64
 	Email    string `binding: "required"`
 	Password string `binding: "required"`
+	Role     string
 }
 
 func GetUsers() ([]User, error) {
-	query := `SELECT id, email, password FROM users`
+	query := `SELECT id, email, password, role FROM users`
 	rows, err := db.DB.Query(db.Ctx, query)
 	if err != nil {
 		return nil, err
@@ -23,7 +24,7 @@ func GetUsers() ([]User, error) {
 	var users []User
 	for rows.Next() {
 		var u User
-		if err := rows.Scan(&u.ID, &u.Email, &u.Password); err != nil {
+		if err := rows.Scan(&u.ID, &u.Email, &u.Password, &u.Role); err != nil {
 			return nil, err
 		}
 		users = append(users, u)
@@ -33,21 +34,23 @@ func GetUsers() ([]User, error) {
 
 func GetUserById(id int64) (*User, error) {
 	var u User
-	query := `SELECT id, email, password FROM users WHERE id=$1`
+	query := `SELECT id, email, password, role FROM users WHERE id=$1`
 	row := db.DB.QueryRow(db.Ctx, query, id)
-	if err := row.Scan(&u.ID, &u.Email, &u.Password); err != nil {
+	if err := row.Scan(&u.ID, &u.Email, &u.Password, &u.Role); err != nil {
 		return nil, err
 	}
 	return &u, nil
 }
 
 func (u *User) ValidateCredentials() error {
-	query := `SELECT id, password FROM users WHERE email=$1`
+	query := `SELECT password, id, role FROM users WHERE email=$1`
 	row := db.DB.QueryRow(db.Ctx, query, u.Email)
 	var hash []byte
-	if err := row.Scan(&u.ID, &hash); err != nil {
+	if err := row.Scan(&hash, &u.ID, &u.Role); err != nil {
 		return err
 	}
+
+	//u.Password kommt aus dem Handler --> Request-Eingabe
 	isPasswordValid := utils.CheckPasswordHash(hash, u.Password)
 	if !isPasswordValid {
 		return errors.New("credentials invalid")
@@ -56,12 +59,14 @@ func (u *User) ValidateCredentials() error {
 }
 
 func (u *User) SaveUser() error {
-	query := `INSERT INTO users(email, password) VALUES ($1, $2) RETURNING id`
+	query := `INSERT INTO users(email, password) VALUES ($1, $2) RETURNING id, role`
 	hashedPassword, err := utils.HashPassword(u.Password)
 	if err != nil {
 		return err
 	}
-	if err := db.DB.QueryRow(db.Ctx, query, u.Email, hashedPassword).Scan(&u.ID); err != nil {
+
+	//u.ID wird im User-Objekt gespeichert --> Das User-Objekt wird im Handler aufgerufen -> Es wird die ID angereichert
+	if err := db.DB.QueryRow(db.Ctx, query, u.Email, hashedPassword).Scan(&u.ID, &u.Role); err != nil {
 		return err
 	}
 	return nil

@@ -26,6 +26,8 @@ func Login(context *gin.Context) {
 	l := logger.FromContext(context.Request.Context())
 
 	l.Debug("Login called")
+
+	//Payload in user Struct speichern
 	err := context.ShouldBindJSON(&user)
 	if err != nil {
 		l.Warn("invalid request payload", "error", err)
@@ -33,6 +35,7 @@ func Login(context *gin.Context) {
 		return
 	}
 
+	// inside Scan(hash, id, role) --> id + role werden an User-Struct übergeben als Pointer
 	err = user.ValidateCredentials()
 
 	if err != nil {
@@ -41,13 +44,14 @@ func Login(context *gin.Context) {
 		return
 	}
 
-	token, err := utils.GenerateToken(user.Email, user.ID)
+	//ID + Role aus der DB geholt
+	token, err := utils.GenerateToken(user.Email, user.ID, user.Role)
 	if err != nil {
 		l.Error("login failed", "error", err)
 		context.JSON(http.StatusInternalServerError, gin.H{"message": "could not generate token", "error": err.Error()})
 		return
 	}
 
-	l.Info("Login successful", "token", token)
+	l.Info("Login successful", "token", token, "userId", user.ID, "userRole", user.Role)
 	context.JSON(http.StatusOK, gin.H{"message": "Login successful", "token": token})
 }
