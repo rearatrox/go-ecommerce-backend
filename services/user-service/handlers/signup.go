@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"net/http"
-	"rearatrox/event-booking-api/pkg/logger"
-	"rearatrox/event-booking-api/services/user-service/models"
+	"rearatrox/go-ecommerce-backend/pkg/logger"
+	"rearatrox/go-ecommerce-backend/services/user-service/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -12,14 +12,14 @@ import (
 // Signup godoc
 // @Summary      Create a new user
 // @Description  Register a new user account
-// @Tags         Users
+// @Tags         Auth
 // @Accept       json
 // @Produce      json
 // @Param        user  body      models.User  true  "User payload"
 // @Success      201   {object}  map[string]interface{}
 // @Failure      400   {object}  map[string]interface{}
 // @Failure      500   {object}  map[string]interface{}
-// @Router       /users/signup [post]
+// @Router       /auth/signup [post]
 func Signup(context *gin.Context) {
 	var user models.User
 	err := context.ShouldBindJSON(&user)

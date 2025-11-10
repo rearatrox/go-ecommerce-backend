@@ -12,7 +12,7 @@ COPY . .
 # Nur den event-service bauen
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     go build -trimpath -ldflags="-s -w" \
-    -o /out/app ./services/event-service
+    -o /out/app ./services/product-service
 
 # ---------- Runtime ----------
 FROM gcr.io/distroless/base-debian12

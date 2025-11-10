@@ -2,11 +2,11 @@ package main
 
 import (
 	"os"
-	"rearatrox/event-booking-api/pkg/logger"
-	"rearatrox/event-booking-api/services/user-service/handlers"
+	"rearatrox/go-ecommerce-backend/pkg/logger"
+	"rearatrox/go-ecommerce-backend/services/user-service/handlers"
 	"strings"
 
-	docs "rearatrox/event-booking-api/services/user-service/docs"
+	docs "rearatrox/go-ecommerce-backend/services/user-service/docs"
 
 	"github.com/gin-gonic/gin"
 	swaggerfiles "github.com/swaggo/files"

@@ -9,6 +9,8 @@ definitions:
         type: integer
       password:
         type: string
+      role:
+        type: string
     type: object
 host: localhost:USERSERVICE_PORT
 info:
@@ -16,7 +18,7 @@ info:
     email: info@webdesign-hauschild.de
     name: Tim Hauschild
     url: https://webdesign-hauschild.de
-  description: API für Event-Verwaltung und Buchung.
+  description: API für ein E-Commerce Backend
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
@@ -24,6 +26,77 @@ info:
   title: Event Booking API - User-Service
   version: "1.0"
 paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate a user and return a JWT token
+      parameters:
+      - description: User credentials (email + password)
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Authenticate user
+      tags:
+      - Auth
+  /auth/signup:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user account
+      parameters:
+      - description: User payload
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create a new user
+      tags:
+      - Auth
   /users:
     get:
       consumes:
@@ -75,77 +148,6 @@ paths:
             additionalProperties: true
             type: object
       summary: Get single user by ID
-      tags:
-      - Users
-  /users/login:
-    post:
-      consumes:
-      - application/json
-      description: Authenticate a user and return a JWT token
-      parameters:
-      - description: User credentials (email + password)
-        in: body
-        name: credentials
-        required: true
-        schema:
-          $ref: '#/definitions/models.User'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Authenticate user
-      tags:
-      - Users
-  /users/signup:
-    post:
-      consumes:
-      - application/json
-      description: Register a new user account
-      parameters:
-      - description: User payload
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/models.User'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Create a new user
       tags:
       - Users
 swagger: "2.0"

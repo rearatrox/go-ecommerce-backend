@@ -3,15 +3,15 @@ package main
 import (
 	"io"
 	"log"
-	"rearatrox/event-booking-api/pkg/db"
-	"rearatrox/event-booking-api/pkg/logger"
+	"rearatrox/go-ecommerce-backend/pkg/db"
+	"rearatrox/go-ecommerce-backend/pkg/logger"
 
 	"github.com/gin-gonic/gin"
 )
 
 // @title Event Booking API - User-Service
 // @version 1.0
-// @description API für Event-Verwaltung und Buchung.
+// @description API für ein E-Commerce Backend
 // @termsOfService http://swagger.io/terms/
 
 // @contact.name Tim Hauschild
