@@ -67,7 +67,7 @@ Each service runs as an independent container in the Docker Compose setup and us
 2. **Adjust .env files**  
    Create a `.env` file from `.env.example` and customize it:
    ```
-   cp .env.example.env
+   cp .env.example .env
    ```
 
 3. **Start containers**
@@ -144,6 +144,10 @@ The Swagger files are automatically generated during build and enable interactiv
 - **Swagger-URL:** [http://localhost:8082/api/v1/users/swagger/index.html](http://localhost:8082/api/v1/users/swagger/index.html)
 
 ### 🛒 Cart-Service
+
+- **Port:** `${CARTSERVICE_PORT}` (default: `8083`)  
+- **Swagger-URL:** [http://localhost:8083/api/v1/cart/swagger/index.html](http://localhost:8083/api/v1/cart/swagger/index.html)
+
 
 > 💡 **Authentication:**  
 > Protected endpoints require a JWT token in the `Authorization` header: `Bearer <token>`  
