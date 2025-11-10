@@ -17,7 +17,7 @@ services:
       migrator:
         condition: service_completed_successfully
     networks:
-      - event-booking-api-network
+      - go-ecommerce-backend-network
 
   event-service:
     build: 
@@ -37,7 +37,7 @@ services:
       migrator:
         condition: service_completed_successfully
     networks:
-      - event-booking-api-network
+      - go-ecommerce-backend-network
 
 
   api-database:
@@ -51,7 +51,7 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
     networks:
-      - event-booking-api-network
+      - go-ecommerce-backend-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_NAME}"]
       interval: 5s
@@ -72,13 +72,26 @@ services:
           "up"
         ]
       networks:
-        - event-booking-api-network
+        - go-ecommerce-backend-network
       restart: "no"
+
+  pgweb:
+    image: sosedoff/pgweb
+    depends_on:
+      api-database:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgres://${DB_USERNAME}:${DB_PASSWORD}@api-database:5432/${DB_NAME}?sslmode=${DB_SSLMODE}
+    ports:
+      - "8088:8081"
+    networks:
+      - go-ecommerce-backend-network
+    restart: "no"
 
 volumes:
   db-data:
 
 networks:
-  event-booking-api-network:
+  go-ecommerce-backend-network:
     driver: bridge
 
