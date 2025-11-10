@@ -7,14 +7,17 @@ import (
 )
 
 type User struct {
-	ID       int64
-	Email    string `binding: "required"`
-	Password string `binding: "required"`
-	Role     string
+	ID        int64   `db:"id" json:"id" swaggerignore:"true"`
+	Email     string  `db:"email" json:"email" binding:"required" example:"user@example.com"`
+	Password  string  `db:"password" json:"password,omitempty" binding:"required" example:"SecurePass123!" swaggerignore:"true"`
+	Role      string  `db:"role" json:"role" example:"user"`
+	FirstName *string `db:"first_name" json:"firstName,omitempty" example:"Max"`
+	LastName  *string `db:"last_name" json:"lastName,omitempty" example:"Mustermann"`
+	Phone     *string `db:"phone" json:"phone,omitempty" example:"+49 123 456789"`
 }
 
 func GetUsers() ([]User, error) {
-	query := `SELECT id, email, password, role FROM users`
+	query := `SELECT id, email, password, role, first_name, last_name, phone FROM users`
 	rows, err := db.DB.Query(db.Ctx, query)
 	if err != nil {
 		return nil, err
@@ -24,7 +27,7 @@ func GetUsers() ([]User, error) {
 	var users []User
 	for rows.Next() {
 		var u User
-		if err := rows.Scan(&u.ID, &u.Email, &u.Password, &u.Role); err != nil {
+		if err := rows.Scan(&u.ID, &u.Email, &u.Password, &u.Role, &u.FirstName, &u.LastName, &u.Phone); err != nil {
 			return nil, err
 		}
 		users = append(users, u)
@@ -34,9 +37,9 @@ func GetUsers() ([]User, error) {
 
 func GetUserById(id int64) (*User, error) {
 	var u User
-	query := `SELECT id, email, password, role FROM users WHERE id=$1`
+	query := `SELECT id, email, password, role, first_name, last_name, phone FROM users WHERE id=$1`
 	row := db.DB.QueryRow(db.Ctx, query, id)
-	if err := row.Scan(&u.ID, &u.Email, &u.Password, &u.Role); err != nil {
+	if err := row.Scan(&u.ID, &u.Email, &u.Password, &u.Role, &u.FirstName, &u.LastName, &u.Phone); err != nil {
 		return nil, err
 	}
 	return &u, nil
@@ -70,4 +73,12 @@ func (u *User) SaveUser() error {
 		return err
 	}
 	return nil
+}
+
+func (u *User) UpdateProfile() error {
+	query := `UPDATE users 
+	          SET first_name=$1, last_name=$2, phone=$3
+	          WHERE id=$4`
+	_, err := db.DB.Exec(db.Ctx, query, u.FirstName, u.LastName, u.Phone, u.ID)
+	return err
 }

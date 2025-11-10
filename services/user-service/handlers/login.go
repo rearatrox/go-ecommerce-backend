@@ -52,6 +52,9 @@ func Login(context *gin.Context) {
 		return
 	}
 
+	//Bearer Token Format
+	token = "Bearer " + token
+
 	l.Info("Login successful", "token", token, "userId", user.ID, "userRole", user.Role)
 	context.JSON(http.StatusOK, gin.H{"message": "Login successful", "token": token})
 }

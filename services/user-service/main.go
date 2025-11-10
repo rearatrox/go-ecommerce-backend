@@ -23,6 +23,10 @@ import (
 
 // @host localhost:USERSERVICE_PORT
 // @BasePath API_PREFIX
+
+// @securityDefinitions.apikey BearerAuth
+// @in          header
+// @name        Authorization
 func main() {
 
 	if err := logger.InitFromEnv(); err != nil {

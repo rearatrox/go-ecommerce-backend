@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"rearatrox/go-ecommerce-backend/pkg/logger"
+	middleware "rearatrox/go-ecommerce-backend/pkg/middleware/auth"
 	"rearatrox/go-ecommerce-backend/services/user-service/handlers"
 	"strings"
 
@@ -39,17 +40,38 @@ func RegisterRoutes(router *gin.Engine) {
 
 	api := router.Group(apiPrefix)
 	{
-		authenticated := api.Group("/")
-		{
-			authenticated.GET("/users", handlers.GetUsers)
-			authenticated.GET("/users/:id", handlers.GetUser)
-		}
+		// Public routes
+		api.POST("/auth/signup", handlers.Signup)
+		api.POST("/auth/login", handlers.Login)
 
 		// make sure the swagger UI knows where to fetch the generated spec
 		api.GET("/users/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
-		api.POST("/auth/signup", handlers.Signup)
-		api.POST("/auth/login", handlers.Login)
+		// Authenticated routes
+		authenticated := api.Group("/")
+		authenticated.Use(middleware.Authenticate)
+		{
+
+			// Profile endpoints
+			authenticated.GET("/users/me", handlers.GetMyProfile)
+			authenticated.PUT("/users/me", handlers.UpdateMyProfile)
+
+			// Address endpoints
+			authenticated.GET("/users/me/addresses", handlers.GetUserAddresses)
+			authenticated.GET("/users/me/addresses/:id", handlers.GetAddressByID)
+			authenticated.POST("/users/me/addresses", handlers.CreateAddress)
+			authenticated.PUT("/users/me/addresses/:id", handlers.UpdateAddress)
+			authenticated.DELETE("/users/me/addresses/:id", handlers.DeleteAddress)
+
+			// admin-only
+			admin := authenticated.Group("/admin")
+			admin.Use(middleware.Authorize("admin"))
+			{
+				// User list (maybe restrict to admin later)
+				admin.GET("/users", handlers.GetUsers)
+				admin.GET("/users/:id", handlers.GetUser)
+			}
+		}
 	}
 
 }
