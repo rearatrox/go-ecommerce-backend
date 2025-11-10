@@ -1,13 +1,15 @@
 package middleware
 
 import (
+	"context"
 	"errors"
 	"os"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func ValidateToken(token string) (int64, string, error) {
+func ValidateToken(token string, db *pgxpool.Pool, ctx context.Context) (int64, string, error) {
 	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (any, error) {
 		_, ok := token.Method.(*jwt.SigningMethodHMAC)
 
@@ -36,5 +38,19 @@ func ValidateToken(token string) (int64, string, error) {
 	//emailClaim := claims["email"].(string)
 	userId := int64(claims["userId"].(float64))
 	userRole := claims["role"].(string)
+	tokenVersion := int(claims["tokenVersion"].(float64))
+
+	// Validate token version against database
+	var dbTokenVersion int
+	query := `SELECT token_version FROM users WHERE id=$1`
+	err = db.QueryRow(ctx, query, userId).Scan(&dbTokenVersion)
+	if err != nil {
+		return 0, "", errors.New("user not found")
+	}
+
+	if tokenVersion != dbTokenVersion {
+		return 0, "", errors.New("token has been revoked")
+	}
+
 	return userId, userRole, nil
 }
