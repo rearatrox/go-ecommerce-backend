@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"net/http"
-	"rearatrox/event-booking-api/pkg/logger"
+	"rearatrox/go-ecommerce-backend/pkg/logger"
 	"strings"
 
 	"github.com/gin-gonic/gin"

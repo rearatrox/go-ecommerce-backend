@@ -46,7 +46,15 @@ func RegisterRoutes(router *gin.Engine) {
 		// make sure the swagger UI knows where to fetch the generated spec
 		api.GET("/products/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 		api.GET("/products", handlers.GetProducts)
-		api.GET("/products/:id", handlers.GetProduct)
+		api.GET("/products/id/:id", handlers.GetProductByID)
+		api.GET("/products/sku/:sku", handlers.GetProductBySKU)
+		api.GET("/products/:sku/categories", handlers.GetProductCategories)
+
+		// Category routes (public)
+		api.GET("/categories", handlers.GetCategories)
+		api.GET("/categories/id/:id", handlers.GetCategoryByID)
+		api.GET("/categories/slug/:slug", handlers.GetCategoryBySlug)
+		api.GET("/categories/:slug/products", handlers.GetProductsByCategory)
 
 		authenticated := api.Group("/")
 		{
@@ -58,9 +66,17 @@ func RegisterRoutes(router *gin.Engine) {
 			admin := authenticated.Group("/admin")
 			admin.Use(middleware.Authorize("admin"))
 			{
-				admin.POST("/products", handlers.CreateProduct)
-				admin.PUT("/products/:id", handlers.UpdateProduct)
-				admin.DELETE("/products/:id", handlers.DeleteProduct)
+				admin.POST("/products/create", handlers.CreateProduct)
+				admin.PUT("/products/update/:sku", handlers.UpdateProduct)
+				admin.DELETE("/products/delete/:sku", handlers.DeleteProductBySKU)
+				admin.POST("/products/deactivate/:sku", handlers.DeactivateProductBySKU)
+				admin.POST("/products/:sku/categories", handlers.AddCategoriesToProduct)
+				admin.DELETE("/products/:sku/categories/:categoryId", handlers.RemoveCategoryFromProduct)
+
+				// Category admin routes
+				admin.POST("/categories/create", handlers.CreateCategory)
+				admin.PUT("/categories/update/:slug", handlers.UpdateCategory)
+				admin.DELETE("/categories/delete/:slug", handlers.DeleteCategoryBySlug)
 			}
 		}
 

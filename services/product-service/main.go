@@ -10,9 +10,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// @title Event Booking API - Event-Service
+// @title Event Booking API - Product-Service
 // @version 1.0
-// @description API für Event-Verwaltung und Buchung.
+// @description API für ein E-Commerce Backend
 // @termsOfService http://swagger.io/terms/
 
 // @contact.name Tim Hauschild
@@ -24,6 +24,10 @@ import (
 
 // @host localhost:EVENTSERVICE_PORT
 // @BasePath API_PREFIX
+
+// @securityDefinitions.apikey BearerAuth
+// @in          header
+// @name        Authorization
 func main() {
 
 	if err := logger.InitFromEnv(); err != nil {

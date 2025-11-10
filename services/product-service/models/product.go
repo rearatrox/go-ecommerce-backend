@@ -7,28 +7,27 @@ import (
 )
 
 type Product struct {
-	ID          int64      `db:"id" json:"id"`
-	SKU         string     `db:"sku" json:"sku" binding:"required"`
-	Name        string     `db:"name" json:"name" binding:"required"`
-	Description string     `db:"description" json:"description,omitempty"`
-	PriceCents  int        `db:"price_cents" json:"priceCents" binding:"required"`
-	Currency    string     `db:"currency" json:"currency"`
-	StockQty    int        `db:"stock_qty" json:"stockQty"`
-	Status      string     `db:"status" json:"status"`
-	ImageURL    string     `db:"image_url" json:"imageUrl"`
-	CreatedAt   time.Time  `db:"created_at" json:"createdAt"`
-	CreatorID   int64      `db:"creator_id" json: "creator_id"`
-	UpdatedAt   *time.Time `db:"updated_at" json:"updatedAt,omitempty"`
+	ID          int64      `db:"id" json:"id" swaggerignore:"true"`
+	SKU         string     `db:"sku" json:"sku" binding:"required" example:"LAPTOP-001"`
+	Name        string     `db:"name" json:"name" binding:"required" example:"Gaming Laptop XPS 15"`
+	Description string     `db:"description" json:"description,omitempty" example:"High-performance gaming laptop with RTX 4070"`
+	PriceCents  int        `db:"price_cents" json:"priceCents" binding:"required" example:"149999"`
+	Currency    string     `db:"currency" json:"currency" example:"EUR"`
+	StockQty    int        `db:"stock_qty" json:"stockQty" example:"25"`
+	Status      string     `db:"status" json:"status" example:"active"`
+	ImageURL    string     `db:"image_url" json:"imageUrl" example:"https://example.com/images/laptop.jpg"`
+	CreatedAt   time.Time  `db:"created_at" json:"createdAt" swaggerignore:"true"`
+	CreatorID   int64      `db:"creator_id" json:"creator_id" swaggerignore:"true"`
+	UpdatedAt   *time.Time `db:"updated_at" json:"updatedAt,omitempty" swaggerignore:"true"`
+	UpdatorID   int64      `db:"updator_id" json:"updator_id" swaggerignore:"true"`
 }
 
-// products slice removed; models now use database storage.
-
 func (p *Product) InsertProduct() error {
-	query := `INSERT INTO products (sku,name,description,price_cents,currency,stock_qty,status,image_url,creator_id)
-          VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-          RETURNING id, created_at`
+	query := `INSERT INTO products (sku,name,description,price_cents,stock_qty,image_url,creator_id, created_at)
+          VALUES ($1,$2,$3,$4,$5,$6,$7, now())
+          RETURNING id, status, currency, created_at`
 	if err := db.DB.QueryRow(db.Ctx, query, p.SKU, p.Name, p.Description, p.PriceCents,
-		p.Currency, p.StockQty, p.Status, p.ImageURL, p.CreatorID).Scan(&p.ID, &p.CreatedAt); err != nil {
+		p.StockQty, p.ImageURL, p.CreatorID).Scan(&p.ID, &p.Status, &p.Currency, &p.CreatedAt); err != nil {
 		return err
 	}
 	return nil
@@ -36,20 +35,26 @@ func (p *Product) InsertProduct() error {
 
 func (p *Product) UpdateProduct() error {
 	query := `UPDATE products
-          SET name=$1, description=$2, price_cents=$3, currency=$4, stock_qty=$5, status=$6, image_url=$7, updated_at=now()
-          WHERE id=$8`
-	_, err := db.DB.Exec(db.Ctx, query, p.Name, p.Description, p.PriceCents, p.Currency, p.StockQty, p.Status, p.ImageURL, p.ID)
+          SET name=$1, description=$2, price_cents=$3, currency=$4, stock_qty=$5, status=$6, image_url=$7, updator_id=$8, updated_at=now()
+          WHERE sku=$9`
+	_, err := db.DB.Exec(db.Ctx, query, p.Name, p.Description, p.PriceCents, p.Currency, p.StockQty, p.Status, p.ImageURL, p.UpdatorID, p.SKU)
 	return err
 }
 
-func (p *Product) DeleteProductByID() error {
-	query := `DELETE FROM products WHERE id=$1`
-	_, err := db.DB.Exec(db.Ctx, query, p.ID)
+func (p *Product) DeleteProductBySKU() error {
+	query := `DELETE FROM products WHERE sku=$1`
+	_, err := db.DB.Exec(db.Ctx, query, p.SKU)
+	return err
+}
+
+func (p *Product) DeactivateProductBySKU() error {
+	query := `UPDATE products SET status='inactive' WHERE sku=$1`
+	_, err := db.DB.Exec(db.Ctx, query, p.SKU)
 	return err
 }
 
 func GetProducts() ([]Product, error) {
-	query := `SELECT sku, name, description, price_cents, currency, stock_qty, status, image_url FROM products`
+	query := `SELECT id, sku, name, description, price_cents, currency, stock_qty, status, image_url, creator_id, created_at, updated_at FROM products`
 	rows, err := db.DB.Query(db.Ctx, query)
 	if err != nil {
 		return nil, err
@@ -59,7 +64,7 @@ func GetProducts() ([]Product, error) {
 	var products []Product
 	for rows.Next() {
 		var p Product
-		if err := rows.Scan(&p.SKU, &p.Name, &p.Description, &p.PriceCents, &p.Currency, &p.StockQty, &p.Status, &p.ImageURL); err != nil {
+		if err := rows.Scan(&p.ID, &p.SKU, &p.Name, &p.Description, &p.PriceCents, &p.Currency, &p.StockQty, &p.Status, &p.ImageURL, &p.CreatorID, &p.CreatedAt, &p.UpdatedAt); err != nil {
 			return nil, err
 		}
 		products = append(products, p)
@@ -68,23 +73,94 @@ func GetProducts() ([]Product, error) {
 }
 
 func GetProductByID(id int64) (*Product, error) {
-	var event Product
-	query := `SELECT id, name, description, location, datetime, creator_id FROM products WHERE id=$1`
+	var p Product
+	query := `SELECT id, sku, name, description, price_cents, currency, stock_qty, status, image_url, creator_id, created_at, updated_at FROM products WHERE id=$1`
 	row := db.DB.QueryRow(db.Ctx, query, id)
-	if err := row.Scan(&event.ID, &event.Name, &event.Description, &event.Location, &event.DateTime, &event.CreatorID); err != nil {
+	if err := row.Scan(&p.ID, &p.SKU, &p.Name, &p.Description, &p.PriceCents, &p.Currency, &p.StockQty, &p.Status, &p.ImageURL, &p.CreatorID, &p.CreatedAt, &p.UpdatedAt); err != nil {
 		return nil, err
 	}
-	return &event, nil
+	return &p, nil
 }
 
-func (e Product) Register(userId int64) error {
-	query := `INSERT INTO event_registrations(event_id, user_id) VALUES ($1, $2)`
-	_, err := db.DB.Exec(db.Ctx, query, e.ID, userId)
+func GetProductBySKU(sku string) (*Product, error) {
+	var p Product
+	query := `SELECT id, sku, name, description, price_cents, currency, stock_qty, status, image_url, creator_id, created_at, updated_at FROM products WHERE sku=$1`
+	row := db.DB.QueryRow(db.Ctx, query, sku)
+	if err := row.Scan(&p.ID, &p.SKU, &p.Name, &p.Description, &p.PriceCents, &p.Currency, &p.StockQty, &p.Status, &p.ImageURL, &p.CreatorID, &p.CreatedAt, &p.UpdatedAt); err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
+// AddCategories adds multiple categories to a product
+func (p *Product) AddCategories(categoryIds []int64) error {
+	if len(categoryIds) == 0 {
+		return nil
+	}
+
+	for _, categoryId := range categoryIds {
+		query := `INSERT INTO product_categories (product_id, category_id, created_at)
+		          VALUES ($1, $2, now())
+		          ON CONFLICT (product_id, category_id) DO NOTHING`
+		_, err := db.DB.Exec(db.Ctx, query, p.ID, categoryId)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// RemoveCategory removes a category from a product
+func (p *Product) RemoveCategory(categoryId int64) error {
+	query := `DELETE FROM product_categories WHERE product_id=$1 AND category_id=$2`
+	_, err := db.DB.Exec(db.Ctx, query, p.ID, categoryId)
 	return err
 }
 
-func (e Product) DeleteRegistration(userId int64) error {
-	query := `DELETE FROM event_registrations WHERE event_id=$1 AND user_id=$2`
-	_, err := db.DB.Exec(db.Ctx, query, e.ID, userId)
-	return err
+// GetProductCategories retrieves all categories for a specific product
+func GetProductCategories(productId int64) ([]Category, error) {
+	query := `SELECT c.id, c.name, c.slug, c.description, c.created_at, c.updated_at 
+	          FROM categories c
+	          INNER JOIN product_categories pc ON c.id = pc.category_id
+	          WHERE pc.product_id = $1
+	          ORDER BY c.name`
+	rows, err := db.DB.Query(db.Ctx, query, productId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var categories []Category
+	for rows.Next() {
+		var c Category
+		if err := rows.Scan(&c.ID, &c.Name, &c.Slug, &c.Description, &c.CreatedAt, &c.UpdatedAt); err != nil {
+			return nil, err
+		}
+		categories = append(categories, c)
+	}
+	return categories, nil
+}
+
+// GetProductsByCategory retrieves all products for a specific category
+func GetProductsByCategory(categoryId int64) ([]Product, error) {
+	query := `SELECT p.id, p.sku, p.name, p.description, p.price_cents, p.currency, p.stock_qty, p.status, p.image_url, p.creator_id, p.created_at, p.updated_at
+	          FROM products p
+	          INNER JOIN product_categories pc ON p.id = pc.product_id
+	          WHERE pc.category_id = $1
+	          ORDER BY p.name`
+	rows, err := db.DB.Query(db.Ctx, query, categoryId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var products []Product
+	for rows.Next() {
+		var p Product
+		if err := rows.Scan(&p.ID, &p.SKU, &p.Name, &p.Description, &p.PriceCents, &p.Currency, &p.StockQty, &p.Status, &p.ImageURL, &p.CreatorID, &p.CreatedAt, &p.UpdatedAt); err != nil {
+			return nil, err
+		}
+		products = append(products, p)
+	}
+	return products, nil
 }

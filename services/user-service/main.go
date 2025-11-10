@@ -11,7 +11,7 @@ import (
 
 // @title Event Booking API - User-Service
 // @version 1.0
-// @description API für Event-Verwaltung und Buchung.
+// @description API für ein E-Commerce Backend
 // @termsOfService http://swagger.io/terms/
 
 // @contact.name Tim Hauschild

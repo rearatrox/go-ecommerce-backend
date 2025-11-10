@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "API für Event-Verwaltung und Buchung.",
+        "description": "API für ein E-Commerce Backend",
         "title": "Event Booking API - User-Service",
         "termsOfService": "http://swagger.io/terms/",
         "contact": {
@@ -18,40 +18,7 @@
     "host": "localhost:USERSERVICE_PORT",
     "basePath": "API_PREFIX",
     "paths": {
-        "/users": {
-            "get": {
-                "description": "Retrieve a list of all users",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Users"
-                ],
-                "summary": "Get all users",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.User"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/users/login": {
+        "/auth/login": {
             "post": {
                 "description": "Authenticate a user and return a JWT token",
                 "consumes": [
@@ -61,7 +28,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Users"
+                    "Auth"
                 ],
                 "summary": "Authenticate user",
                 "parameters": [
@@ -107,7 +74,7 @@
                 }
             }
         },
-        "/users/signup": {
+        "/auth/signup": {
             "post": {
                 "description": "Register a new user account",
                 "consumes": [
@@ -117,7 +84,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Users"
+                    "Auth"
                 ],
                 "summary": "Create a new user",
                 "parameters": [
@@ -144,6 +111,39 @@
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/users": {
+            "get": {
+                "description": "Retrieve a list of all users",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get all users",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.User"
+                            }
                         }
                     },
                     "500": {
@@ -215,6 +215,9 @@
                     "format": "int64"
                 },
                 "password": {
+                    "type": "string"
+                },
+                "role": {
                     "type": "string"
                 }
             }
