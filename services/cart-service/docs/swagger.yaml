@@ -1,0 +1,262 @@
+basePath: API_PREFIX
+definitions:
+  models.AddItemRequest:
+    properties:
+      productId:
+        example: 1
+        type: integer
+      quantity:
+        example: 2
+        minimum: 1
+        type: integer
+    required:
+    - productId
+    - quantity
+    type: object
+  models.Cart:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/models.CartItem'
+        type: array
+      status:
+        example: active
+        type: string
+      totalCents:
+        description: Total in cents
+        type: integer
+    type: object
+  models.CartItem:
+    properties:
+      priceCents:
+        example: 2999
+        type: integer
+      productDescription:
+        example: High-performance laptop
+        type: string
+      productId:
+        example: 1
+        type: integer
+      productImageUrl:
+        example: https://example.com/laptop.jpg
+        type: string
+      productName:
+        description: Product details (joined from products table)
+        example: Gaming Laptop
+        type: string
+      quantity:
+        example: 2
+        type: integer
+    type: object
+  models.UpdateItemRequest:
+    properties:
+      quantity:
+        example: 3
+        minimum: 1
+        type: integer
+    required:
+    - quantity
+    type: object
+host: localhost:CARTSERVICE_PORT
+info:
+  contact:
+    email: info@webdesign-hauschild.de
+    name: Tim Hauschild
+    url: https://webdesign-hauschild.de
+  description: API für Warenkorb-Verwaltung im E-Commerce Backend
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: E-Commerce Backend - Cart-Service
+  version: "1.0"
+paths:
+  /cart:
+    delete:
+      consumes:
+      - application/json
+      description: Remove all items from the cart
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Cart'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Clear cart
+      tags:
+      - Cart
+    get:
+      consumes:
+      - application/json
+      description: Get the active cart for the authenticated user with all items
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Cart'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get user's cart
+      tags:
+      - Cart
+  /cart/items:
+    post:
+      consumes:
+      - application/json
+      description: Add a product to the cart or update quantity if it already exists
+      parameters:
+      - description: Product and quantity to add
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.AddItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Cart'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Add item to cart
+      tags:
+      - Cart
+  /cart/items/{productId}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a product from the cart
+      parameters:
+      - description: Product ID
+        in: path
+        name: productId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Cart'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Remove item from cart
+      tags:
+      - Cart
+    put:
+      consumes:
+      - application/json
+      description: Update the quantity of a specific product in the cart
+      parameters:
+      - description: Product ID
+        in: path
+        name: productId
+        required: true
+        type: integer
+      - description: New quantity
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Cart'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update cart item quantity
+      tags:
+      - Cart
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
