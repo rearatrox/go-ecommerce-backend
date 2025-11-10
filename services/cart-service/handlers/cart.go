@@ -61,8 +61,28 @@ func AddItem(context *gin.Context) {
 		return
 	}
 
-	// Check stock availability
-	stockResp, err := checkStockAvailability(int64(req.ProductID), req.Quantity)
+	// Get or create cart first to check existing quantity
+	cart, err := models.GetOrCreateCart(userId)
+	if err != nil {
+		l.Error("failed to get cart", "user_id", userId, "error", err)
+		context.JSON(http.StatusInternalServerError, gin.H{"message": "could not fetch cart.", "error": err.Error()})
+		return
+	}
+
+	// Check if product already exists in cart and get current quantity
+	existingQuantity := 0
+	for _, item := range cart.Items {
+		if item.ProductID == int64(req.ProductID) {
+			existingQuantity = item.Quantity
+			break
+		}
+	}
+
+	// Calculate total quantity (existing + new)
+	totalQuantity := existingQuantity + req.Quantity
+
+	// Check stock availability with total quantity
+	stockResp, err := checkStockAvailability(int64(req.ProductID), totalQuantity)
 	if err != nil {
 		l.Error("failed to check stock", "product_id", req.ProductID, "error", err)
 		context.JSON(http.StatusInternalServerError, gin.H{"message": "could not check stock availability.", "error": err.Error()})
@@ -70,18 +90,20 @@ func AddItem(context *gin.Context) {
 	}
 
 	if !stockResp.Available {
-		l.Warn("insufficient stock", "product_id", req.ProductID, "requested", req.Quantity, "available", stockResp.AvailableQty)
+		l.Warn("insufficient stock", "product_id", req.ProductID, "requested", totalQuantity, "available", stockResp.AvailableQty, "in_cart", existingQuantity)
 		context.JSON(http.StatusConflict, gin.H{
-			"message":   "insufficient stock",
-			"requested": req.Quantity,
-			"available": stockResp.AvailableQty,
-			"productId": req.ProductID,
+			"message":     "insufficient stock",
+			"requested":   req.Quantity,
+			"inCart":      existingQuantity,
+			"totalNeeded": totalQuantity,
+			"available":   stockResp.AvailableQty,
+			"productId":   req.ProductID,
 		})
 		return
 	}
 
 	// Get or create cart
-	cart, err := models.GetOrCreateCart(userId)
+	cart, err = models.GetOrCreateCart(userId)
 	if err != nil {
 		l.Error("failed to get cart", "user_id", userId, "error", err)
 		context.JSON(http.StatusInternalServerError, gin.H{"message": "could not fetch cart.", "error": err.Error()})
