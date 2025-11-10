@@ -61,6 +61,25 @@ func AddItem(context *gin.Context) {
 		return
 	}
 
+	// Check stock availability
+	stockResp, err := checkStockAvailability(int64(req.ProductID), req.Quantity)
+	if err != nil {
+		l.Error("failed to check stock", "product_id", req.ProductID, "error", err)
+		context.JSON(http.StatusInternalServerError, gin.H{"message": "could not check stock availability.", "error": err.Error()})
+		return
+	}
+
+	if !stockResp.Available {
+		l.Warn("insufficient stock", "product_id", req.ProductID, "requested", req.Quantity, "available", stockResp.AvailableQty)
+		context.JSON(http.StatusConflict, gin.H{
+			"message":   "insufficient stock",
+			"requested": req.Quantity,
+			"available": stockResp.AvailableQty,
+			"productId": req.ProductID,
+		})
+		return
+	}
+
 	// Get or create cart
 	cart, err := models.GetOrCreateCart(userId)
 	if err != nil {

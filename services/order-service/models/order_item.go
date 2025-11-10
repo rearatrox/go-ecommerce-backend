@@ -49,3 +49,40 @@ func GetOrderItems(orderId int64) ([]OrderItem, error) {
 
 	return items, nil
 }
+
+type CartItem struct {
+	ProductID   int64  `db:"product_id"`
+	Quantity    int    `db:"quantity"`
+	ProductName string `db:"product_name"`
+}
+
+// GetCartItemsForUser retrieves cart items for validation before creating order
+func GetCartItemsForUser(userId int64) ([]CartItem, error) {
+	query := `SELECT ci.product_id, ci.quantity, p.name
+	          FROM cart_items ci
+	          JOIN carts c ON ci.cart_id = c.id
+	          JOIN products p ON ci.product_id = p.id
+	          WHERE c.user_id=$1 AND c.status='active'`
+
+	rows, err := db.DB.Query(db.Ctx, query, userId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []CartItem
+	for rows.Next() {
+		var item CartItem
+		err := rows.Scan(&item.ProductID, &item.Quantity, &item.ProductName)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+
+	if items == nil {
+		items = []CartItem{}
+	}
+
+	return items, nil
+}

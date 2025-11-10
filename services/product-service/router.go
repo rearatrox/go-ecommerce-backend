@@ -50,6 +50,9 @@ func RegisterRoutes(router *gin.Engine) {
 		api.GET("/products/sku/:sku", handlers.GetProductBySKU)
 		api.GET("/products/:sku/categories", handlers.GetProductCategories)
 
+		// Stock operations (for other services)
+		api.POST("/products/stock/check", handlers.CheckStock)
+
 		// Category routes (public)
 		api.GET("/categories", handlers.GetCategories)
 		api.GET("/categories/id/:id", handlers.GetCategoryByID)
@@ -72,6 +75,9 @@ func RegisterRoutes(router *gin.Engine) {
 				admin.POST("/products/deactivate/:sku", handlers.DeactivateProductBySKU)
 				admin.POST("/products/:sku/categories", handlers.AddCategoriesToProduct)
 				admin.DELETE("/products/:sku/categories/:categoryId", handlers.RemoveCategoryFromProduct)
+
+				// Stock management (admin or service-to-service)
+				admin.POST("/products/stock/reduce", handlers.ReduceStock)
 
 				// Category admin routes
 				admin.POST("/categories/create", handlers.CreateCategory)

@@ -39,6 +39,42 @@ func CreateOrder(context *gin.Context) {
 		return
 	}
 
+	// Get cart items to check stock before creating order
+	cartItems, err := models.GetCartItemsForUser(userId)
+	if err != nil {
+		l.Error("failed to get cart items", "user_id", userId, "error", err)
+		context.JSON(http.StatusInternalServerError, gin.H{"message": "could not fetch cart items.", "error": err.Error()})
+		return
+	}
+
+	if len(cartItems) == 0 {
+		l.Warn("empty cart", "user_id", userId)
+		context.JSON(http.StatusBadRequest, gin.H{"message": "cannot create order from empty cart."})
+		return
+	}
+
+	// Check stock availability for all items
+	for _, item := range cartItems {
+		stockResp, err := checkStockAvailability(item.ProductID, item.Quantity)
+		if err != nil {
+			l.Error("failed to check stock", "product_id", item.ProductID, "error", err)
+			context.JSON(http.StatusInternalServerError, gin.H{"message": "could not check stock availability.", "error": err.Error()})
+			return
+		}
+
+		if !stockResp.Available {
+			l.Warn("insufficient stock for order", "product_id", item.ProductID, "requested", item.Quantity, "available", stockResp.AvailableQty)
+			context.JSON(http.StatusConflict, gin.H{
+				"message":     "insufficient stock",
+				"productId":   item.ProductID,
+				"productName": item.ProductName,
+				"requested":   item.Quantity,
+				"available":   stockResp.AvailableQty,
+			})
+			return
+		}
+	}
+
 	// Create order from active cart
 	order, err := models.CreateFromCart(userId, req.ShippingAddressID, req.BillingAddressID)
 	if err != nil {
@@ -163,6 +199,26 @@ func UpdateOrderStatus(context *gin.Context) {
 		l.Error("failed to get order", "user_id", userId, "order_id", orderId, "error", err)
 		context.JSON(http.StatusNotFound, gin.H{"message": "order not found."})
 		return
+	}
+
+	// If status changes to 'confirmed', reduce stock
+	if req.Status == "confirmed" && order.Status != "confirmed" {
+		l.Debug("order confirmed, reducing stock", "order_id", orderId)
+
+		// Get JWT token from request header
+		jwtToken := context.GetHeader("Authorization")
+		if jwtToken == "" {
+			l.Error("missing authorization token for stock reduce", "order_id", orderId)
+			context.JSON(http.StatusUnauthorized, gin.H{"message": "authorization required for stock reduction"})
+			return
+		}
+
+		if err := reduceStockForOrder(order.Items, jwtToken); err != nil {
+			l.Error("failed to reduce stock", "order_id", orderId, "error", err)
+			context.JSON(http.StatusInternalServerError, gin.H{"message": "could not reduce stock.", "error": err.Error()})
+			return
+		}
+		l.Info("stock reduced", "order_id", orderId, "items_count", len(order.Items))
 	}
 
 	// Update status

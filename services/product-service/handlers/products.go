@@ -417,3 +417,102 @@ func RemoveCategoryFromProduct(context *gin.Context) {
 	l.Info("removed category from product", "productSku", productSku, "categoryId", categoryId)
 	context.JSON(http.StatusOK, gin.H{"message": "category removed successfully", "productSku": productSku, "categoryId": categoryId})
 }
+
+type CheckStockRequest struct {
+	ProductID int64 `json:"productId" binding:"required" example:"1"`
+	Quantity  int   `json:"quantity" binding:"required,min=1" example:"2"`
+}
+
+type CheckStockResponse struct {
+	Available    bool  `json:"available" example:"true"`
+	RequestedQty int   `json:"requestedQty" example:"2"`
+	AvailableQty int   `json:"availableQty" example:"10"`
+	ProductID    int64 `json:"productId" example:"1"`
+}
+
+// CheckStock godoc
+// @Summary      Check stock availability
+// @Description  Check if enough stock is available for a product (used by Cart/Order services)
+// @Tags         Products
+// @Accept       json
+// @Produce      json
+// @Param        request  body      CheckStockRequest  true  "Product and quantity to check"
+// @Success      200      {object}  CheckStockResponse
+// @Failure      400      {object}  map[string]interface{}
+// @Failure      500      {object}  map[string]interface{}
+// @Router       /products/stock/check [post]
+func CheckStock(context *gin.Context) {
+	l := logger.FromContext(context.Request.Context())
+
+	var req CheckStockRequest
+	if err := context.ShouldBindJSON(&req); err != nil {
+		l.Error("failed to bind request", "error", err)
+		context.JSON(http.StatusBadRequest, gin.H{"message": "invalid request.", "error": err.Error()})
+		return
+	}
+
+	l.Debug("CheckStock called", "productId", req.ProductID, "quantity", req.Quantity)
+
+	available, currentStock, err := models.CheckStockAvailable(req.ProductID, req.Quantity)
+	if err != nil {
+		l.Error("failed to check stock", "productId", req.ProductID, "error", err)
+		context.JSON(http.StatusInternalServerError, gin.H{"message": "could not check stock.", "error": err.Error()})
+		return
+	}
+
+	response := CheckStockResponse{
+		Available:    available,
+		RequestedQty: req.Quantity,
+		AvailableQty: currentStock,
+		ProductID:    req.ProductID,
+	}
+
+	l.Info("stock checked", "productId", req.ProductID, "available", available, "requested", req.Quantity, "current", currentStock)
+	context.JSON(http.StatusOK, response)
+}
+
+type ReduceStockRequest struct {
+	ProductID int64 `json:"productId" binding:"required" example:"1"`
+	Quantity  int   `json:"quantity" binding:"required,min=1" example:"2"`
+}
+
+// ReduceStock godoc
+// @Summary      Reduce stock quantity
+// @Description  Reduce stock when an order is confirmed (used by Order service)
+// @Tags         Products
+// @Accept       json
+// @Produce      json
+// @Param        request  body      ReduceStockRequest  true  "Product and quantity to reduce"
+// @Success      200      {object}  map[string]interface{}
+// @Failure      400      {object}  map[string]interface{}
+// @Failure      409      {object}  map[string]interface{}
+// @Failure      500      {object}  map[string]interface{}
+// @Security     BearerAuth
+// @Router       /products/stock/reduce [post]
+func ReduceStock(context *gin.Context) {
+	l := logger.FromContext(context.Request.Context())
+
+	var req ReduceStockRequest
+	if err := context.ShouldBindJSON(&req); err != nil {
+		l.Error("failed to bind request", "error", err)
+		context.JSON(http.StatusBadRequest, gin.H{"message": "invalid request.", "error": err.Error()})
+		return
+	}
+
+	l.Debug("ReduceStock called", "productId", req.ProductID, "quantity", req.Quantity)
+
+	err := models.ReduceStock(req.ProductID, req.Quantity)
+	if err != nil {
+		if _, ok := err.(*models.StockError); ok {
+			l.Warn("insufficient stock", "productId", req.ProductID, "quantity", req.Quantity)
+			context.JSON(http.StatusConflict, gin.H{"message": "insufficient stock or product not found.", "error": err.Error()})
+			return
+		}
+		l.Error("failed to reduce stock", "productId", req.ProductID, "error", err)
+		context.JSON(http.StatusInternalServerError, gin.H{"message": "could not reduce stock.", "error": err.Error()})
+		return
+	}
+
+	l.Info("stock reduced", "productId", req.ProductID, "quantity", req.Quantity)
+	context.JSON(http.StatusOK, gin.H{"message": "stock reduced successfully", "productId": req.ProductID, "quantity": req.Quantity})
+}

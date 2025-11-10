@@ -164,3 +164,50 @@ func GetProductsByCategory(categoryId int64) ([]Product, error) {
 	}
 	return products, nil
 }
+
+// CheckStockAvailable checks if enough stock is available for a product
+func CheckStockAvailable(productID int64, quantity int) (bool, int, error) {
+	var stockQty int
+	var status string
+	query := `SELECT stock_qty, status FROM products WHERE id=$1`
+	err := db.DB.QueryRow(db.Ctx, query, productID).Scan(&stockQty, &status)
+	if err != nil {
+		return false, 0, err
+	}
+
+	// Check if product is active and has enough stock
+	if status != "active" {
+		return false, stockQty, nil
+	}
+
+	return stockQty >= quantity, stockQty, nil
+}
+
+// ReduceStock reduces the stock quantity when an order is confirmed
+func ReduceStock(productID int64, quantity int) error {
+	query := `UPDATE products 
+	          SET stock_qty = stock_qty - $1, updated_at = now()
+	          WHERE id = $2 AND stock_qty >= $1`
+	result, err := db.DB.Exec(db.Ctx, query, quantity, productID)
+	if err != nil {
+		return err
+	}
+
+	// Check if any rows were affected (no rows = insufficient stock or product not found)
+	rowsAffected := result.RowsAffected()
+	if rowsAffected == 0 {
+		return &StockError{ProductID: productID, Requested: quantity}
+	}
+
+	return nil
+}
+
+// StockError represents an insufficient stock error
+type StockError struct {
+	ProductID int64
+	Requested int
+}
+
+func (e *StockError) Error() string {
+	return "insufficient stock or product not found"
+}
