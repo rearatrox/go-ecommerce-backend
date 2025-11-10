@@ -1,0 +1,261 @@
+basePath: API_PREFIX
+definitions:
+  handlers.CreateOrderRequest:
+    properties:
+      billingAddressId:
+        example: 2
+        type: integer
+      shippingAddressId:
+        example: 1
+        type: integer
+    type: object
+  handlers.UpdateStatusRequest:
+    properties:
+      status:
+        example: confirmed
+        type: string
+    required:
+    - status
+    type: object
+  models.Address:
+    properties:
+      city:
+        example: New York
+        type: string
+      country:
+        example: USA
+        type: string
+      id:
+        type: integer
+      isDefault:
+        type: boolean
+      state:
+        example: NY
+        type: string
+      street:
+        example: Main Street 123
+        type: string
+      zipCode:
+        example: "10001"
+        type: string
+    type: object
+  models.Order:
+    properties:
+      billingAddress:
+        $ref: '#/definitions/models.Address'
+      billingAddressId:
+        example: 1
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/models.OrderItem'
+        type: array
+      shippingAddress:
+        allOf:
+        - $ref: '#/definitions/models.Address'
+        description: Address details (joined)
+      shippingAddressId:
+        example: 1
+        type: integer
+      status:
+        example: pending
+        type: string
+      totalCents:
+        example: 5999
+        type: integer
+    type: object
+  models.OrderItem:
+    properties:
+      priceCents:
+        example: 2999
+        type: integer
+      productId:
+        example: 1
+        type: integer
+      productName:
+        example: Gaming Laptop
+        type: string
+      quantity:
+        example: 2
+        type: integer
+    type: object
+host: localhost:ORDERSERVICE_PORT
+info:
+  contact:
+    email: info@webdesign-hauschild.de
+    name: Tim Hauschild
+    url: https://webdesign-hauschild.de
+  description: API für Bestellverwaltung im E-Commerce Backend
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: E-Commerce Backend - Order-Service
+  version: "1.0"
+paths:
+  /orders:
+    get:
+      consumes:
+      - application/json
+      description: Get all orders for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Order'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List user's orders
+      tags:
+      - Orders
+    post:
+      consumes:
+      - application/json
+      description: Creates a new order from the user's active cart and marks cart
+        as ordered
+      parameters:
+      - description: Address IDs (optional)
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Order'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create order from cart
+      tags:
+      - Orders
+  /orders/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get details of a specific order including items and addresses
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Order'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get order by ID
+      tags:
+      - Orders
+  /orders/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: Update the status of an order (for future payment integration)
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: New status
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Order'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update order status
+      tags:
+      - Orders
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
