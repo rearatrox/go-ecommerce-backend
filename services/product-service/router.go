@@ -6,6 +6,7 @@ import (
 
 	"rearatrox/go-ecommerce-backend/pkg/logger"
 	middleware "rearatrox/go-ecommerce-backend/pkg/middleware/auth"
+	"rearatrox/go-ecommerce-backend/pkg/middleware/serviceauth"
 	"rearatrox/go-ecommerce-backend/services/product-service/handlers"
 
 	docs "rearatrox/go-ecommerce-backend/services/product-service/docs"
@@ -63,6 +64,13 @@ func RegisterRoutes(router *gin.Engine) {
 
 		// Stock operations (for other services)
 		api.POST("/products/stock/check", handlers.CheckStock)
+
+		// Internal endpoints (service-to-service communication with secret)
+		internal := api.Group("/internal")
+		internal.Use(serviceauth.InternalAuth())
+		{
+			internal.POST("/products/stock/reduce", handlers.ReduceStock)
+		}
 
 		// Category routes (public)
 		api.GET("/categories", handlers.GetCategories)

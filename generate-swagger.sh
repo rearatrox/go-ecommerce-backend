@@ -2,7 +2,7 @@
 
 echo "Generating Swagger documentation for all services..."
 
-services=("user-service" "product-service" "cart-service" "order-service", "payment-service")
+services=("user-service" "product-service" "cart-service" "order-service" "payment-service")
 
 for service in "${services[@]}"; do
     echo "Generating Swagger docs for $service..."

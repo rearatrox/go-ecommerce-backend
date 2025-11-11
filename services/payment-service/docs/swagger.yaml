@@ -1,127 +1,78 @@
 basePath: API_PREFIX
 definitions:
-  handlers.CheckStockRequest:
+  handlers.CreatePaymentIntentRequest:
     properties:
-      productId:
+      orderId:
         example: 1
         type: integer
-      quantity:
-        example: 2
-        minimum: 1
-        type: integer
     required:
-    - productId
-    - quantity
+    - orderId
     type: object
-  handlers.CheckStockResponse:
+  handlers.CreatePaymentIntentResponse:
     properties:
-      available:
-        example: true
-        type: boolean
-      availableQty:
-        example: 10
-        type: integer
-      productId:
+      clientSecret:
+        example: pi_xxx_secret_xxx
+        type: string
+      paymentId:
         example: 1
         type: integer
-      requestedQty:
-        example: 2
-        type: integer
-    type: object
-  handlers.ReduceStockRequest:
-    properties:
-      productId:
-        example: 1
-        type: integer
-      quantity:
-        example: 2
-        minimum: 1
-        type: integer
-    required:
-    - productId
-    - quantity
-    type: object
-  models.Category:
-    properties:
-      description:
-        example: Elektronische Geräte, Zubehör und Gadgets
+      paymentIntentId:
+        example: pi_1234567890
         type: string
-      name:
-        example: Elektronik
-        type: string
-      slug:
-        example: elektronik
-        type: string
-    required:
-    - name
-    - slug
     type: object
-  models.Product:
+  models.Payment:
     properties:
+      amountCents:
+        example: 5999
+        type: integer
       currency:
         example: EUR
         type: string
-      description:
-        example: High-performance gaming laptop with RTX 4070
-        type: string
-      imageUrl:
-        example: https://example.com/images/laptop.jpg
-        type: string
-      name:
-        example: Gaming Laptop XPS 15
-        type: string
-      priceCents:
-        example: 149999
+      orderId:
+        example: 1
         type: integer
-      sku:
-        example: LAPTOP-001
-        type: string
       status:
-        example: active
+        example: pending
         type: string
-      stockQty:
-        example: 25
-        type: integer
-    required:
-    - name
-    - priceCents
-    - sku
+      stripeClientSecret:
+        type: string
+      stripePaymentIntentId:
+        example: pi_1234567890
+        type: string
     type: object
-host: localhost:EVENTSERVICE_PORT
+host: localhost:PAYMENTSERVICE_PORT
 info:
   contact:
     email: info@webdesign-hauschild.de
     name: Tim Hauschild
     url: https://webdesign-hauschild.de
-  description: API für ein E-Commerce Backend
+  description: API für Zahlungsabwicklung im E-Commerce Backend
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
   termsOfService: http://swagger.io/terms/
-  title: Event Booking API - Product-Service
+  title: E-Commerce Backend - Payment-Service
   version: "1.0"
 paths:
-  /admin/categories/create:
+  /payment-intents:
     post:
       consumes:
       - application/json
-      description: Create category. Requires authentication and authorization as role
-        "admin".
+      description: Creates a Stripe Payment Intent for an order
       parameters:
-      - description: 'Category payload - Example:'
+      - description: Order ID
         in: body
-        name: category
+        name: request
         required: true
         schema:
-          $ref: '#/definitions/models.Category'
+          $ref: '#/definitions/handlers.CreatePaymentIntentRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.CreatePaymentIntentResponse'
         "400":
           description: Bad Request
           schema:
@@ -129,663 +80,6 @@ paths:
             type: object
         "401":
           description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Create a new category
-      tags:
-      - Categories (Admin)
-  /admin/categories/delete/{slug}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete category by slug. Requires authentication and authorization
-        as role "admin".
-      parameters:
-      - description: Category slug
-        in: path
-        name: slug
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Delete a category
-      tags:
-      - Categories (Admin)
-  /admin/categories/update/{slug}:
-    put:
-      consumes:
-      - application/json
-      description: 'Update category by slug. Requires authentication and authorization
-        as role "admin". Note: slug in body must match slug in URL path.'
-      parameters:
-      - description: Category Slug
-        in: path
-        name: slug
-        required: true
-        type: string
-      - description: 'Updated category payload - Example:'
-        in: body
-        name: category
-        required: true
-        schema:
-          $ref: '#/definitions/models.Category'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Update an existing category
-      tags:
-      - Categories (Admin)
-  /admin/products/{sku}/categories:
-    post:
-      consumes:
-      - application/json
-      description: Add one or more categories to a product (as an Array of CategoryIds).
-        Requires authentication and authorization as role "admin".
-      parameters:
-      - description: Product SKU
-        in: path
-        name: sku
-        required: true
-        type: string
-      - description: 'Category IDs - Example:'
-        in: body
-        name: body
-        required: true
-        schema:
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Add categories to a product
-      tags:
-      - Products (Admin)
-  /admin/products/{sku}/categories/{categoryId}:
-    delete:
-      consumes:
-      - application/json
-      description: Remove a category assignment from a product. Requires authentication
-        and authorization as role "admin".
-      parameters:
-      - description: Product SKU
-        in: path
-        name: sku
-        required: true
-        type: string
-      - description: Category ID
-        in: path
-        name: categoryId
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Remove a category from a product
-      tags:
-      - Products (Admin)
-  /admin/products/create:
-    post:
-      consumes:
-      - application/json
-      description: Create product with optional category assignment. Requires authentication
-        and authorization as role "admin".
-      parameters:
-      - description: 'Product payload - Optional field: categoryIds (array of integers,
-          e.g. [1, 2, 3])'
-        in: body
-        name: product
-        required: true
-        schema:
-          $ref: '#/definitions/models.Product'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Create a new product
-      tags:
-      - Products (Admin)
-  /admin/products/deactivate/{sku}:
-    post:
-      consumes:
-      - application/json
-      description: Deactivate product by sku. Requires authentication and authorization
-        as role "admin".
-      parameters:
-      - description: Product sku
-        in: path
-        name: sku
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Deactivate a product
-      tags:
-      - Products (Admin)
-  /admin/products/delete/{sku}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete product by sku. Requires authentication and authorization
-        as role "admin".
-      parameters:
-      - description: Product sku
-        in: path
-        name: sku
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Delete an product
-      tags:
-      - Products (Admin)
-  /admin/products/update/{sku}:
-    put:
-      consumes:
-      - application/json
-      description: 'Update product by sku. Note: SKU in body must match SKU in URL
-        path. Requires authentication and authorization as role "admin".'
-      parameters:
-      - description: Product SKU
-        in: path
-        name: sku
-        required: true
-        type: string
-      - description: Updated product payload
-        in: body
-        name: product
-        required: true
-        schema:
-          $ref: '#/definitions/models.Product'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Update an existing product
-      tags:
-      - Products (Admin)
-  /categories:
-    get:
-      consumes:
-      - application/json
-      description: Get all category information of all categories
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/models.Category'
-            type: array
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get all categories
-      tags:
-      - Categories
-  /categories/{slug}/products:
-    get:
-      consumes:
-      - application/json
-      description: Get all products assigned to a specific category
-      parameters:
-      - description: Category Slug
-        in: path
-        name: slug
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/models.Product'
-            type: array
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get products by category
-      tags:
-      - Categories
-  /categories/id/{id}:
-    get:
-      consumes:
-      - application/json
-      description: Get details of a category by its ID
-      parameters:
-      - description: Category ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Category'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get single category by ID
-      tags:
-      - Categories
-  /categories/slug/{slug}:
-    get:
-      consumes:
-      - application/json
-      description: Get details of a category by its slug
-      parameters:
-      - description: Category Slug
-        in: path
-        name: slug
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Category'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get single category by slug
-      tags:
-      - Categories
-  /products:
-    get:
-      consumes:
-      - application/json
-      description: Get all product information of all products
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/models.Product'
-            type: array
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get all products
-      tags:
-      - Products
-  /products/{sku}/categories:
-    get:
-      consumes:
-      - application/json
-      description: Get all categories assigned to a specific product
-      parameters:
-      - description: Product SKU
-        in: path
-        name: sku
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/models.Category'
-            type: array
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get categories of a product
-      tags:
-      - Products
-  /products/id/{id}:
-    get:
-      consumes:
-      - application/json
-      description: Get details of an product by its ID
-      parameters:
-      - description: Product ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Product'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get single product by ID
-      tags:
-      - Products
-  /products/sku/{sku}:
-    get:
-      consumes:
-      - application/json
-      description: Get details of an product by its SKU
-      parameters:
-      - description: Product SKU
-        in: path
-        name: sku
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Product'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get single product by SKU
-      tags:
-      - Products
-  /products/stock/check:
-    post:
-      consumes:
-      - application/json
-      description: Check if enough stock is available for a product (used by Cart/Order
-        services)
-      parameters:
-      - description: Product and quantity to check
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.CheckStockRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.CheckStockResponse'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Check stock availability
-      tags:
-      - Products
-  /products/stock/reduce:
-    post:
-      consumes:
-      - application/json
-      description: Reduce stock when an order is confirmed (used by Order service)
-      parameters:
-      - description: Product and quantity to reduce
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.ReduceStockRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
           schema:
             additionalProperties: true
             type: object
@@ -801,9 +95,73 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: Reduce stock quantity
+      summary: Create payment intent
       tags:
-      - Products
+      - Payments
+  /payments/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get the status of a payment by ID
+      parameters:
+      - description: Payment ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Payment'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get payment status
+      tags:
+      - Payments
+  /webhooks/stripe:
+    post:
+      consumes:
+      - application/json
+      description: Handles Stripe webhook events for payment updates
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Stripe webhook handler
+      tags:
+      - Webhooks
 securityDefinitions:
   BearerAuth:
     in: header

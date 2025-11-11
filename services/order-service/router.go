@@ -4,6 +4,7 @@ import (
 	"os"
 	"rearatrox/go-ecommerce-backend/pkg/logger"
 	middleware "rearatrox/go-ecommerce-backend/pkg/middleware/auth"
+	"rearatrox/go-ecommerce-backend/pkg/middleware/serviceauth"
 	"rearatrox/go-ecommerce-backend/services/order-service/handlers"
 	"strings"
 
@@ -52,8 +53,9 @@ func RegisterRoutes(router *gin.Engine) {
 		// make sure the swagger UI knows where to fetch the generated spec
 		api.GET("/orders/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
-		// Internal endpoints (no authentication - for service-to-service communication)
+		// Internal endpoints (service-to-service communication with secret)
 		internal := api.Group("/internal")
+		internal.Use(serviceauth.InternalAuth())
 		{
 			internal.PATCH("/orders/:id/status", handlers.InternalUpdateOrderStatus)
 		}
@@ -67,6 +69,7 @@ func RegisterRoutes(router *gin.Engine) {
 			authenticated.GET("/orders", handlers.ListOrders)
 			authenticated.GET("/orders/:id", handlers.GetOrder)
 			authenticated.PATCH("/orders/:id/status", handlers.UpdateOrderStatus)
+			authenticated.PATCH("/orders/:id/cancel", handlers.CancelOrder)
 		}
 	}
 }

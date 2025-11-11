@@ -24,14 +24,14 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/admin/categories/create": {
+        "/payment-intents": {
             "post": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create category. Requires authentication and authorization as role \"admin\".",
+                "description": "Creates a Stripe Payment Intent for an order",
                 "consumes": [
                     "application/json"
                 ],
@@ -39,17 +39,17 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Categories (Admin)"
+                    "Payments"
                 ],
-                "summary": "Create a new category",
+                "summary": "Create payment intent",
                 "parameters": [
                     {
-                        "description": "Category payload - Example:",
-                        "name": "category",
+                        "description": "Order ID",
+                        "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Category"
+                            "$ref": "#/definitions/handlers.CreatePaymentIntentRequest"
                         }
                     }
                 ],
@@ -57,8 +57,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.CreatePaymentIntentResponse"
                         }
                     },
                     "400": {
@@ -70,929 +69,6 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/categories/delete/{slug}": {
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Delete category by slug. Requires authentication and authorization as role \"admin\".",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Categories (Admin)"
-                ],
-                "summary": "Delete a category",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Category slug",
-                        "name": "slug",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/categories/update/{slug}": {
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Update category by slug. Requires authentication and authorization as role \"admin\". Note: slug in body must match slug in URL path.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Categories (Admin)"
-                ],
-                "summary": "Update an existing category",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Category Slug",
-                        "name": "slug",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Updated category payload - Example:",
-                        "name": "category",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Category"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/products/create": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Create product with optional category assignment. Requires authentication and authorization as role \"admin\".",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Products (Admin)"
-                ],
-                "summary": "Create a new product",
-                "parameters": [
-                    {
-                        "description": "Product payload - Optional field: categoryIds (array of integers, e.g. [1, 2, 3])",
-                        "name": "product",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Product"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/products/deactivate/{sku}": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Deactivate product by sku. Requires authentication and authorization as role \"admin\".",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Products (Admin)"
-                ],
-                "summary": "Deactivate a product",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Product sku",
-                        "name": "sku",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/products/delete/{sku}": {
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Delete product by sku. Requires authentication and authorization as role \"admin\".",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Products (Admin)"
-                ],
-                "summary": "Delete an product",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Product sku",
-                        "name": "sku",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/products/update/{sku}": {
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Update product by sku. Note: SKU in body must match SKU in URL path. Requires authentication and authorization as role \"admin\".",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Products (Admin)"
-                ],
-                "summary": "Update an existing product",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Product SKU",
-                        "name": "sku",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Updated product payload",
-                        "name": "product",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Product"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/products/{sku}/categories": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Add one or more categories to a product (as an Array of CategoryIds). Requires authentication and authorization as role \"admin\".",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Products (Admin)"
-                ],
-                "summary": "Add categories to a product",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Product SKU",
-                        "name": "sku",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Category IDs - Example:",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/products/{sku}/categories/{categoryId}": {
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Remove a category assignment from a product. Requires authentication and authorization as role \"admin\".",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Products (Admin)"
-                ],
-                "summary": "Remove a category from a product",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Product SKU",
-                        "name": "sku",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Category ID",
-                        "name": "categoryId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/categories": {
-            "get": {
-                "description": "Get all category information of all categories",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Categories"
-                ],
-                "summary": "Get all categories",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Category"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/categories/id/{id}": {
-            "get": {
-                "description": "Get details of a category by its ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Categories"
-                ],
-                "summary": "Get single category by ID",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Category ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.Category"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/categories/slug/{slug}": {
-            "get": {
-                "description": "Get details of a category by its slug",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Categories"
-                ],
-                "summary": "Get single category by slug",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Category Slug",
-                        "name": "slug",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.Category"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/categories/{slug}/products": {
-            "get": {
-                "description": "Get all products assigned to a specific category",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Categories"
-                ],
-                "summary": "Get products by category",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Category Slug",
-                        "name": "slug",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Product"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/products": {
-            "get": {
-                "description": "Get all product information of all products",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Products"
-                ],
-                "summary": "Get all products",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Product"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/products/id/{id}": {
-            "get": {
-                "description": "Get details of an product by its ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Products"
-                ],
-                "summary": "Get single product by ID",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Product ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.Product"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/products/sku/{sku}": {
-            "get": {
-                "description": "Get details of an product by its SKU",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Products"
-                ],
-                "summary": "Get single product by SKU",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Product SKU",
-                        "name": "sku",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.Product"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/products/stock/check": {
-            "post": {
-                "description": "Check if enough stock is available for a product (used by Cart/Order services)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Products"
-                ],
-                "summary": "Check stock availability",
-                "parameters": [
-                    {
-                        "description": "Product and quantity to check",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.CheckStockRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.CheckStockResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/products/stock/reduce": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Reduce stock when an order is confirmed (used by Order service)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Products"
-                ],
-                "summary": "Reduce stock quantity",
-                "parameters": [
-                    {
-                        "description": "Product and quantity to reduce",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ReduceStockRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1015,9 +91,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/products/{sku}/categories": {
+        "/payments/{id}": {
             "get": {
-                "description": "Get all categories assigned to a specific product",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get the status of a payment by ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -1025,14 +106,14 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Products"
+                    "Payments"
                 ],
-                "summary": "Get categories of a product",
+                "summary": "Get payment status",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Product SKU",
-                        "name": "sku",
+                        "type": "integer",
+                        "description": "Payment ID",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -1041,10 +122,52 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Category"
-                            }
+                            "$ref": "#/definitions/models.Payment"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/webhooks/stripe": {
+            "post": {
+                "description": "Handles Stripe webhook events for payment updates",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "Stripe webhook handler",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     },
                     "400": {
@@ -1066,123 +189,60 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "handlers.CheckStockRequest": {
+        "handlers.CreatePaymentIntentRequest": {
             "type": "object",
             "required": [
-                "productId",
-                "quantity"
+                "orderId"
             ],
             "properties": {
-                "productId": {
+                "orderId": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "handlers.CreatePaymentIntentResponse": {
+            "type": "object",
+            "properties": {
+                "clientSecret": {
+                    "type": "string",
+                    "example": "pi_xxx_secret_xxx"
+                },
+                "paymentId": {
                     "type": "integer",
                     "example": 1
                 },
-                "quantity": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "example": 2
-                }
-            }
-        },
-        "handlers.CheckStockResponse": {
-            "type": "object",
-            "properties": {
-                "available": {
-                    "type": "boolean",
-                    "example": true
-                },
-                "availableQty": {
-                    "type": "integer",
-                    "example": 10
-                },
-                "productId": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "requestedQty": {
-                    "type": "integer",
-                    "example": 2
-                }
-            }
-        },
-        "handlers.ReduceStockRequest": {
-            "type": "object",
-            "required": [
-                "productId",
-                "quantity"
-            ],
-            "properties": {
-                "productId": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "quantity": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "example": 2
-                }
-            }
-        },
-        "models.Category": {
-            "type": "object",
-            "required": [
-                "name",
-                "slug"
-            ],
-            "properties": {
-                "description": {
+                "paymentIntentId": {
                     "type": "string",
-                    "example": "Elektronische Geräte, Zubehör und Gadgets"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "Elektronik"
-                },
-                "slug": {
-                    "type": "string",
-                    "example": "elektronik"
+                    "example": "pi_1234567890"
                 }
             }
         },
-        "models.Product": {
+        "models.Payment": {
             "type": "object",
-            "required": [
-                "name",
-                "priceCents",
-                "sku"
-            ],
             "properties": {
+                "amountCents": {
+                    "type": "integer",
+                    "example": 5999
+                },
                 "currency": {
                     "type": "string",
                     "example": "EUR"
                 },
-                "description": {
-                    "type": "string",
-                    "example": "High-performance gaming laptop with RTX 4070"
-                },
-                "imageUrl": {
-                    "type": "string",
-                    "example": "https://example.com/images/laptop.jpg"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "Gaming Laptop XPS 15"
-                },
-                "priceCents": {
+                "orderId": {
                     "type": "integer",
-                    "example": 149999
-                },
-                "sku": {
-                    "type": "string",
-                    "example": "LAPTOP-001"
+                    "example": 1
                 },
                 "status": {
                     "type": "string",
-                    "example": "active"
+                    "example": "pending"
                 },
-                "stockQty": {
-                    "type": "integer",
-                    "example": 25
+                "stripeClientSecret": {
+                    "type": "string"
+                },
+                "stripePaymentIntentId": {
+                    "type": "string",
+                    "example": "pi_1234567890"
                 }
             }
         }
@@ -1199,11 +259,11 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:EVENTSERVICE_PORT",
+	Host:             "localhost:PAYMENTSERVICE_PORT",
 	BasePath:         "API_PREFIX",
 	Schemes:          []string{},
-	Title:            "Event Booking API - Product-Service",
-	Description:      "API für ein E-Commerce Backend",
+	Title:            "E-Commerce Backend - Payment-Service",
+	Description:      "API für Zahlungsabwicklung im E-Commerce Backend",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

@@ -39,6 +39,31 @@ func CreateOrder(context *gin.Context) {
 		return
 	}
 
+	// Get JWT token for service-to-service calls
+	jwtToken := context.GetHeader("Authorization")
+	if jwtToken == "" {
+		l.Error("missing authorization token", "user_id", userId)
+		context.JSON(http.StatusUnauthorized, gin.H{"message": "authorization required."})
+		return
+	}
+
+	// Verify address ownership if addresses are provided
+	if req.ShippingAddressID != nil {
+		if err := verifyAddressOwnership(*req.ShippingAddressID, userId, jwtToken); err != nil {
+			l.Warn("invalid shipping address", "user_id", userId, "address_id", *req.ShippingAddressID, "error", err)
+			context.JSON(http.StatusForbidden, gin.H{"message": "invalid shipping address.", "error": err.Error()})
+			return
+		}
+	}
+
+	if req.BillingAddressID != nil {
+		if err := verifyAddressOwnership(*req.BillingAddressID, userId, jwtToken); err != nil {
+			l.Warn("invalid billing address", "user_id", userId, "address_id", *req.BillingAddressID, "error", err)
+			context.JSON(http.StatusForbidden, gin.H{"message": "invalid billing address.", "error": err.Error()})
+			return
+		}
+	}
+
 	// Get cart items to check stock before creating order
 	cartItems, err := models.GetCartItemsForUser(userId)
 	if err != nil {
@@ -205,15 +230,7 @@ func UpdateOrderStatus(context *gin.Context) {
 	if req.Status == "confirmed" && order.Status != "confirmed" {
 		l.Debug("order confirmed, reducing stock", "order_id", orderId)
 
-		// Get JWT token from request header
-		jwtToken := context.GetHeader("Authorization")
-		if jwtToken == "" {
-			l.Error("missing authorization token for stock reduce", "order_id", orderId)
-			context.JSON(http.StatusUnauthorized, gin.H{"message": "authorization required for stock reduction"})
-			return
-		}
-
-		if err := reduceStockForOrder(order.Items, jwtToken); err != nil {
+		if err := reduceStockForOrder(order.Items); err != nil {
 			l.Error("failed to reduce stock", "order_id", orderId, "error", err)
 			context.JSON(http.StatusInternalServerError, gin.H{"message": "could not reduce stock.", "error": err.Error()})
 			return
@@ -229,6 +246,64 @@ func UpdateOrderStatus(context *gin.Context) {
 	}
 
 	l.Info("updated order status", "user_id", userId, "order_id", orderId, "new_status", req.Status)
+	context.JSON(http.StatusOK, order)
+}
+
+// CancelOrder godoc
+// @Summary      Cancel an order
+// @Description  Cancel an order (only possible for pending orders)
+// @Tags         Orders
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "Order ID"
+// @Success      200  {object}  models.Order
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      401  {object}  map[string]interface{}
+// @Failure      404  {object}  map[string]interface{}
+// @Failure      409  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Security     BearerAuth
+// @Router       /orders/{id}/cancel [patch]
+func CancelOrder(context *gin.Context) {
+	l := logger.FromContext(context.Request.Context())
+	userId := context.GetInt64("userId")
+	orderIdStr := context.Param("id")
+
+	orderId, err := strconv.ParseInt(orderIdStr, 10, 64)
+	if err != nil {
+		l.Error("invalid order ID", "order_id", orderIdStr, "error", err)
+		context.JSON(http.StatusBadRequest, gin.H{"message": "invalid order ID."})
+		return
+	}
+
+	l.Debug("CancelOrder called", "user_id", userId, "order_id", orderId)
+
+	// Get order
+	order, err := models.GetOrderByID(orderId, userId)
+	if err != nil {
+		l.Error("failed to get order", "user_id", userId, "order_id", orderId, "error", err)
+		context.JSON(http.StatusNotFound, gin.H{"message": "order not found."})
+		return
+	}
+
+	// Only allow cancellation of pending or confirmed orders (not shipped/delivered)
+	if order.Status != "pending" && order.Status != "confirmed" {
+		l.Warn("cannot cancel order in current state", "order_id", orderId, "status", order.Status)
+		context.JSON(http.StatusConflict, gin.H{
+			"message": "order cannot be cancelled in current state",
+			"status":  order.Status,
+		})
+		return
+	}
+
+	// Update status to cancelled
+	if err := order.UpdateStatus("cancelled"); err != nil {
+		l.Error("failed to cancel order", "user_id", userId, "order_id", orderId, "error", err)
+		context.JSON(http.StatusInternalServerError, gin.H{"message": "could not cancel order.", "error": err.Error()})
+		return
+	}
+
+	l.Info("cancelled order", "user_id", userId, "order_id", orderId)
 	context.JSON(http.StatusOK, order)
 }
 
@@ -271,6 +346,18 @@ func InternalUpdateOrderStatus(context *gin.Context) {
 		l.Error("failed to get order", "order_id", orderId, "error", err)
 		context.JSON(http.StatusNotFound, gin.H{"message": "order not found."})
 		return
+	}
+
+	// If status changes to 'confirmed', reduce stock
+	if req.Status == "confirmed" && order.Status != "confirmed" {
+		l.Debug("order confirmed, reducing stock (internal)", "order_id", orderId)
+
+		if err := reduceStockForOrder(order.Items); err != nil {
+			l.Error("failed to reduce stock", "order_id", orderId, "error", err)
+			context.JSON(http.StatusInternalServerError, gin.H{"message": "could not reduce stock.", "error": err.Error()})
+			return
+		}
+		l.Info("stock reduced (internal)", "order_id", orderId, "items_count", len(order.Items))
 	}
 
 	// Update status

@@ -52,32 +52,61 @@ func CreatePaymentIntent(context *gin.Context) {
 		return
 	}
 
-	// Check if payment already exists for this order
-	existingPayment, err := models.GetByOrderID(req.OrderID)
-	if err == nil && existingPayment != nil {
-		l.Warn("payment already exists for order", "order_id", req.OrderID, "payment_id", existingPayment.ID)
-		context.JSON(http.StatusConflict, gin.H{
-			"message":         "payment already exists for this order",
-			"paymentId":       existingPayment.ID,
-			"clientSecret":    existingPayment.StripeClientSecret,
-			"paymentIntentId": existingPayment.StripePaymentIntentID,
-		})
+	// Get JWT token from request header
+	jwtToken := context.GetHeader("Authorization")
+	if jwtToken == "" {
+		l.Error("missing authorization token", "order_id", req.OrderID)
+		context.JSON(http.StatusUnauthorized, gin.H{"message": "authorization required."})
 		return
 	}
 
-	// Get order details from order-service
-	order, err := getOrderDetails(req.OrderID)
+	// Get order details from order-service FIRST to verify ownership
+	order, err := getOrderDetails(req.OrderID, jwtToken)
 	if err != nil {
 		l.Error("failed to get order details", "order_id", req.OrderID, "error", err)
 		context.JSON(http.StatusInternalServerError, gin.H{"message": "could not fetch order details.", "error": err.Error()})
 		return
 	}
 
-	// Verify user owns this order
+	// Verify user owns this order BEFORE doing anything else
 	if order.UserID != userId {
 		l.Warn("unauthorized order access", "order_id", req.OrderID, "user_id", userId, "order_user_id", order.UserID)
 		context.JSON(http.StatusForbidden, gin.H{"message": "access denied."})
 		return
+	}
+
+	// Check if payment already exists for this order
+	existingPayment, err := models.GetByOrderID(req.OrderID)
+	if err == nil && existingPayment != nil {
+		// Allow retry if previous payment failed or was cancelled
+		if existingPayment.Status == "failed" || existingPayment.Status == "cancelled" {
+			l.Info("previous payment failed/cancelled, allowing retry", "order_id", req.OrderID, "old_payment_id", existingPayment.ID, "old_status", existingPayment.Status)
+			// Mark old payment as superseded
+			if err := models.UpdateStatus(existingPayment.ID, "superseded"); err != nil {
+				l.Error("failed to mark old payment as superseded", "payment_id", existingPayment.ID, "error", err)
+				// Continue anyway - this is not critical
+			}
+		} else if existingPayment.Status == "pending" {
+			// Return existing pending payment intent
+			l.Info("returning existing pending payment intent", "order_id", req.OrderID, "payment_id", existingPayment.ID)
+			context.JSON(http.StatusOK, CreatePaymentIntentResponse{
+				PaymentID:     existingPayment.ID,
+				ClientSecret:  *existingPayment.StripeClientSecret,
+				PaymentIntent: *existingPayment.StripePaymentIntentID,
+			})
+			return
+		} else {
+			// Payment succeeded or in other final state - cannot create new one
+			l.Warn("payment already exists in final state", "order_id", req.OrderID, "payment_id", existingPayment.ID, "status", existingPayment.Status)
+			context.JSON(http.StatusConflict, gin.H{
+				"message":         "payment already exists for this order",
+				"paymentId":       existingPayment.ID,
+				"status":          existingPayment.Status,
+				"clientSecret":    existingPayment.StripeClientSecret,
+				"paymentIntentId": existingPayment.StripePaymentIntentID,
+			})
+			return
+		}
 	}
 
 	// Verify order is in pending state
@@ -202,7 +231,14 @@ func WebhookHandler(context *gin.Context) {
 
 	// Verify webhook signature
 	webhookSecret := os.Getenv("STRIPE_WEBHOOK_SECRET")
-	event, err := webhook.ConstructEvent(payload, context.GetHeader("Stripe-Signature"), webhookSecret)
+	event, err := webhook.ConstructEventWithOptions(
+		payload,
+		context.GetHeader("Stripe-Signature"),
+		webhookSecret,
+		webhook.ConstructEventOptions{
+			IgnoreAPIVersionMismatch: true,
+		},
+	)
 	if err != nil {
 		l.Error("failed to verify webhook signature", "error", err)
 		context.JSON(http.StatusBadRequest, gin.H{"message": "invalid signature."})

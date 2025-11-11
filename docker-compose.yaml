@@ -14,6 +14,7 @@ services:
       - API_PREFIX=${API_PREFIX}
       - JWT_SECRET=${JWT_SECRET}
       - USERSERVICE_PORT=${USERSERVICE_PORT}
+      - INTERNAL_API_SECRET=${INTERNAL_API_SECRET}
     depends_on:
       migrator:
         condition: service_completed_successfully
@@ -35,6 +36,7 @@ services:
       - API_PREFIX=${API_PREFIX}
       - JWT_SECRET=${JWT_SECRET}
       - PRODUCTSERVICE_PORT=${PRODUCTSERVICE_PORT}
+      - INTERNAL_API_SECRET=${INTERNAL_API_SECRET}
     depends_on:
       migrator:
         condition: service_completed_successfully
@@ -56,6 +58,7 @@ services:
       - API_PREFIX=${API_PREFIX}
       - JWT_SECRET=${JWT_SECRET}
       - CARTSERVICE_PORT=${CARTSERVICE_PORT}
+      - INTERNAL_API_SECRET=${INTERNAL_API_SECRET}
     depends_on:
       migrator:
         condition: service_completed_successfully
@@ -77,6 +80,7 @@ services:
       - API_PREFIX=${API_PREFIX}
       - JWT_SECRET=${JWT_SECRET}
       - ORDERSERVICE_PORT=${ORDERSERVICE_PORT}
+      - INTERNAL_API_SECRET=${INTERNAL_API_SECRET}
     depends_on:
       migrator:
         condition: service_completed_successfully
@@ -100,6 +104,7 @@ services:
       - PAYMENTSERVICE_PORT=${PAYMENTSERVICE_PORT}
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - INTERNAL_API_SECRET=${INTERNAL_API_SECRET}
     depends_on:
       migrator:
         condition: service_completed_successfully

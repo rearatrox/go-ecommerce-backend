@@ -21,7 +21,7 @@ type UpdateOrderStatusRequest struct {
 }
 
 // getOrderDetails fetches order information from order-service
-func getOrderDetails(orderID int64) (*OrderResponse, error) {
+func getOrderDetails(orderID int64, jwtToken string) (*OrderResponse, error) {
 	orderServiceURL := "http://order-service:8080"
 
 	apiPrefix := os.Getenv("API_PREFIX")
@@ -31,7 +31,14 @@ func getOrderDetails(orderID int64) (*OrderResponse, error) {
 
 	url := fmt.Sprintf("%s%s/orders/%d", orderServiceURL, apiPrefix, orderID)
 
-	resp, err := http.Get(url)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Authorization", jwtToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to call order-service: %w", err)
 	}
@@ -59,6 +66,11 @@ func updateOrderStatus(orderID int64, status string) error {
 		apiPrefix = "/api/v1"
 	}
 
+	internalSecret := os.Getenv("INTERNAL_API_SECRET")
+	if internalSecret == "" {
+		return fmt.Errorf("INTERNAL_API_SECRET not configured")
+	}
+
 	url := fmt.Sprintf("%s%s/internal/orders/%d/status", orderServiceURL, apiPrefix, orderID)
 
 	reqBody := UpdateOrderStatusRequest{
@@ -75,6 +87,7 @@ func updateOrderStatus(orderID int64, status string) error {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Internal-Secret", internalSecret)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)

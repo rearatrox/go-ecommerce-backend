@@ -67,20 +67,21 @@ func checkStockAvailability(productID int64, quantity int) (*CheckStockResponse,
 	return &stockResp, nil
 }
 
-// reduceStock calls the product-service to reduce stock (with JWT token)
-func reduceStock(productID int64, quantity int, jwtToken string) error {
-	port := os.Getenv("PRODUCTSERVICE_PORT")
-	if port == "" {
-		port = "8080" // Default internal container port
-	}
-	productServiceURL := fmt.Sprintf("http://product-service:%s", port)
+// reduceStock calls the product-service to reduce stock (internal endpoint, no auth required)
+func reduceStock(productID int64, quantity int) error {
+	productServiceURL := "http://product-service:8080"
 
 	apiPrefix := os.Getenv("API_PREFIX")
 	if apiPrefix == "" {
 		apiPrefix = "/api/v1"
 	}
 
-	url := fmt.Sprintf("%s%s/admin/products/stock/reduce", productServiceURL, apiPrefix)
+	internalSecret := os.Getenv("INTERNAL_API_SECRET")
+	if internalSecret == "" {
+		return fmt.Errorf("INTERNAL_API_SECRET not configured")
+	}
+
+	url := fmt.Sprintf("%s%s/internal/products/stock/reduce", productServiceURL, apiPrefix)
 
 	reqBody := ReduceStockRequest{
 		ProductID: productID,
@@ -98,7 +99,7 @@ func reduceStock(productID int64, quantity int, jwtToken string) error {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", jwtToken)
+	req.Header.Set("X-Internal-Secret", internalSecret)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -116,9 +117,9 @@ func reduceStock(productID int64, quantity int, jwtToken string) error {
 }
 
 // reduceStockForOrder reduces stock for all items in an order
-func reduceStockForOrder(items []models.OrderItem, jwtToken string) error {
+func reduceStockForOrder(items []models.OrderItem) error {
 	for _, item := range items {
-		if err := reduceStock(item.ProductID, item.Quantity, jwtToken); err != nil {
+		if err := reduceStock(item.ProductID, item.Quantity); err != nil {
 			return fmt.Errorf("failed to reduce stock for product %d: %w", item.ProductID, err)
 		}
 	}

@@ -9,10 +9,10 @@ RUN go mod download
 # Rest des Repos (wegen imports aus /pkg etc.)
 COPY . .
 
-# Nur den event-service bauen
+# Nur den payment-service bauen
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     go build -trimpath -ldflags="-s -w" \
-    -o /out/app ./services/product-service
+    -o /out/app ./services/payment-service
 
 # ---------- Runtime ----------
 FROM gcr.io/distroless/base-debian12
