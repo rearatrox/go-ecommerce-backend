@@ -6,6 +6,7 @@ import (
 	"rearatrox/go-ecommerce-backend/pkg/db"
 )
 
+// Address Struct represents a user's address
 type Address struct {
 	ID         int64      `db:"id" json:"id" swaggerignore:"true"`
 	UserID     int64      `db:"user_id" json:"userId" swaggerignore:"true"`
@@ -20,7 +21,8 @@ type Address struct {
 	UpdatedAt  *time.Time `db:"updated_at" json:"updatedAt,omitempty" swaggerignore:"true"`
 }
 
-// GetUserAddresses retrieves all addresses for a specific user
+// GetUserAddresses retrieves all addresses for a specific user, ordered by default status and creation date
+// used in: handlers.GetUserAddresses
 func GetUserAddresses(userId int64) ([]Address, error) {
 	query := `SELECT id, user_id, full_name, street, postal_code, city, country, type, is_default, created_at, updated_at 
 	          FROM addresses 
@@ -43,7 +45,8 @@ func GetUserAddresses(userId int64) ([]Address, error) {
 	return addresses, nil
 }
 
-// GetAddressByID retrieves a specific address by ID and user ID (for security)
+// GetAddressByID retrieves a specific address by ID and user ID to ensure users can only access their own addresses
+// used in: handlers.GetAddressByID, handlers.UpdateAddress, handlers.DeleteAddress
 func GetAddressByID(addressId int64, userId int64) (*Address, error) {
 	var a Address
 	query := `SELECT id, user_id, full_name, street, postal_code, city, country, type, is_default, created_at, updated_at 
@@ -56,7 +59,8 @@ func GetAddressByID(addressId int64, userId int64) (*Address, error) {
 	return &a, nil
 }
 
-// InsertAddress creates a new address for a user
+// InsertAddress creates a new address for a user and unsets other default addresses of the same type if needed
+// used in: handlers.CreateAddress
 func (a *Address) InsertAddress() error {
 	// If this is set as default, unset other defaults of the same type
 	if a.IsDefault {
@@ -77,7 +81,8 @@ func (a *Address) InsertAddress() error {
 	return nil
 }
 
-// UpdateAddress updates an existing address
+// UpdateAddress updates an existing address and unsets other default addresses of the same type if needed
+// used in: handlers.UpdateAddress
 func (a *Address) UpdateAddress() error {
 	// If this is set as default, unset other defaults of the same type
 	if a.IsDefault {
@@ -97,6 +102,7 @@ func (a *Address) UpdateAddress() error {
 }
 
 // DeleteAddress deletes an address
+// used in: handlers.DeleteAddress
 func (a *Address) DeleteAddress() error {
 	query := `DELETE FROM addresses WHERE id=$1 AND user_id=$2`
 	_, err := db.DB.Exec(db.Ctx, query, a.ID, a.UserID)

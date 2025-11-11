@@ -6,6 +6,7 @@ import (
 	"rearatrox/go-ecommerce-backend/services/user-service/utils"
 )
 
+// User Struct represents a user in the system
 type User struct {
 	ID           int64   `db:"id" json:"id" swaggerignore:"true"`
 	Email        string  `db:"email" json:"email" binding:"required" example:"user@example.com"`
@@ -17,6 +18,8 @@ type User struct {
 	Phone        *string `db:"phone" json:"phone,omitempty" example:"+49 123 456789"`
 }
 
+// GetUsers retrieves all users from the database (admin only)
+// used in: handlers.GetUsers
 func GetUsers() ([]User, error) {
 	query := `SELECT id, email, password, role, token_version, first_name, last_name, phone FROM users`
 	rows, err := db.DB.Query(db.Ctx, query)
@@ -36,6 +39,8 @@ func GetUsers() ([]User, error) {
 	return users, nil
 }
 
+// GetUserById retrieves a user by their ID
+// used in: handlers.GetUser, handlers.GetMyProfile, handlers.Logout
 func GetUserById(id int64) (*User, error) {
 	var u User
 	query := `SELECT id, email, password, role, token_version, first_name, last_name, phone FROM users WHERE id=$1`
@@ -46,6 +51,8 @@ func GetUserById(id int64) (*User, error) {
 	return &u, nil
 }
 
+// ValidateCredentials checks if the provided password matches the stored hash and loads user data
+// used in: handlers.Login
 func (u *User) ValidateCredentials() error {
 	query := `SELECT password, id, role, token_version FROM users WHERE email=$1`
 	row := db.DB.QueryRow(db.Ctx, query, u.Email)
@@ -54,7 +61,6 @@ func (u *User) ValidateCredentials() error {
 		return err
 	}
 
-	//u.Password kommt aus dem Handler --> Request-Eingabe
 	isPasswordValid := utils.CheckPasswordHash(hash, u.Password)
 	if !isPasswordValid {
 		return errors.New("credentials invalid")
@@ -62,6 +68,8 @@ func (u *User) ValidateCredentials() error {
 	return nil
 }
 
+// SaveUser creates a new user in the database with hashed password
+// used in: handlers.Signup
 func (u *User) SaveUser() error {
 	query := `INSERT INTO users(email, password) VALUES ($1, $2) RETURNING id, role`
 	hashedPassword, err := utils.HashPassword(u.Password)
@@ -69,13 +77,14 @@ func (u *User) SaveUser() error {
 		return err
 	}
 
-	//u.ID wird im User-Objekt gespeichert --> Das User-Objekt wird im Handler aufgerufen -> Es wird die ID angereichert
 	if err := db.DB.QueryRow(db.Ctx, query, u.Email, hashedPassword).Scan(&u.ID, &u.Role); err != nil {
 		return err
 	}
 	return nil
 }
 
+// UpdateProfile updates the user's profile information (firstName, lastName, phone)
+// used in: handlers.UpdateMyProfile
 func (u *User) UpdateProfile() error {
 	query := `UPDATE users 
 	          SET first_name=$1, last_name=$2, phone=$3
@@ -84,7 +93,8 @@ func (u *User) UpdateProfile() error {
 	return err
 }
 
-// IncrementTokenVersion increments the token version to invalidate all existing tokens
+// IncrementTokenVersion increments the token version to invalidate all existing JWT tokens
+// used in: handlers.Logout
 func (u *User) IncrementTokenVersion() error {
 	query := `UPDATE users 
 	          SET token_version = token_version + 1 
