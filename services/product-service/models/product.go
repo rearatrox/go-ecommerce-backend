@@ -22,6 +22,8 @@ type Product struct {
 	UpdatorID   int64      `db:"updator_id" json:"updator_id" swaggerignore:"true"`
 }
 
+// InsertProduct creates a new product in the database
+// used in: handlers.CreateProduct
 func (p *Product) InsertProduct() error {
 	query := `INSERT INTO products (sku,name,description,price_cents,stock_qty,image_url,creator_id, created_at)
           VALUES ($1,$2,$3,$4,$5,$6,$7, now())
@@ -33,6 +35,8 @@ func (p *Product) InsertProduct() error {
 	return nil
 }
 
+// UpdateProduct updates an existing product's information
+// used in: handlers.UpdateProduct
 func (p *Product) UpdateProduct() error {
 	query := `UPDATE products
           SET name=$1, description=$2, price_cents=$3, currency=$4, stock_qty=$5, status=$6, image_url=$7, updator_id=$8, updated_at=now()
@@ -41,18 +45,24 @@ func (p *Product) UpdateProduct() error {
 	return err
 }
 
+// DeleteProductBySKU permanently removes a product from the database
+// used in: handlers.DeleteProductBySKU
 func (p *Product) DeleteProductBySKU() error {
 	query := `DELETE FROM products WHERE sku=$1`
 	_, err := db.DB.Exec(db.Ctx, query, p.SKU)
 	return err
 }
 
+// DeactivateProductBySKU marks a product as inactive without deleting it
+// used in: handlers.DeactivateProductBySKU
 func (p *Product) DeactivateProductBySKU() error {
 	query := `UPDATE products SET status='inactive' WHERE sku=$1`
 	_, err := db.DB.Exec(db.Ctx, query, p.SKU)
 	return err
 }
 
+// GetProducts retrieves all products from the database
+// used in: handlers.GetProducts
 func GetProducts() ([]Product, error) {
 	query := `SELECT id, sku, name, description, price_cents, currency, stock_qty, status, image_url, creator_id, created_at, updated_at FROM products`
 	rows, err := db.DB.Query(db.Ctx, query)
@@ -72,6 +82,8 @@ func GetProducts() ([]Product, error) {
 	return products, nil
 }
 
+// GetProductByID retrieves a product by its numeric ID
+// used in: handlers.GetProductByID
 func GetProductByID(id int64) (*Product, error) {
 	var p Product
 	query := `SELECT id, sku, name, description, price_cents, currency, stock_qty, status, image_url, creator_id, created_at, updated_at FROM products WHERE id=$1`
@@ -82,6 +94,8 @@ func GetProductByID(id int64) (*Product, error) {
 	return &p, nil
 }
 
+// GetProductBySKU retrieves a product by its SKU identifier
+// used in: handlers.GetProductBySKU, handlers.UpdateProduct, handlers.DeactivateProductBySKU, handlers.DeleteProductBySKU, handlers.AddCategoriesToProduct, handlers.RemoveCategoryFromProduct, handlers.GetProductCategories
 func GetProductBySKU(sku string) (*Product, error) {
 	var p Product
 	query := `SELECT id, sku, name, description, price_cents, currency, stock_qty, status, image_url, creator_id, created_at, updated_at FROM products WHERE sku=$1`
@@ -92,7 +106,8 @@ func GetProductBySKU(sku string) (*Product, error) {
 	return &p, nil
 }
 
-// AddCategories adds multiple categories to a product
+// AddCategories assigns multiple categories to a product
+// used in: handlers.CreateProduct, handlers.AddCategoriesToProduct
 func (p *Product) AddCategories(categoryIds []int64) error {
 	if len(categoryIds) == 0 {
 		return nil
@@ -110,14 +125,16 @@ func (p *Product) AddCategories(categoryIds []int64) error {
 	return nil
 }
 
-// RemoveCategory removes a category from a product
+// RemoveCategory removes a category assignment from a product
+// used in: handlers.RemoveCategoryFromProduct
 func (p *Product) RemoveCategory(categoryId int64) error {
 	query := `DELETE FROM product_categories WHERE product_id=$1 AND category_id=$2`
 	_, err := db.DB.Exec(db.Ctx, query, p.ID, categoryId)
 	return err
 }
 
-// GetProductCategories retrieves all categories for a specific product
+// GetProductCategories retrieves all categories assigned to a specific product
+// used in: handlers.GetProductCategories
 func GetProductCategories(productId int64) ([]Category, error) {
 	query := `SELECT c.id, c.name, c.slug, c.description, c.created_at, c.updated_at 
 	          FROM categories c
@@ -141,7 +158,8 @@ func GetProductCategories(productId int64) ([]Category, error) {
 	return categories, nil
 }
 
-// GetProductsByCategory retrieves all products for a specific category
+// GetProductsByCategory retrieves all products assigned to a specific category
+// used in: handlers.GetProductsByCategory
 func GetProductsByCategory(categoryId int64) ([]Product, error) {
 	query := `SELECT p.id, p.sku, p.name, p.description, p.price_cents, p.currency, p.stock_qty, p.status, p.image_url, p.creator_id, p.created_at, p.updated_at
 	          FROM products p
@@ -165,7 +183,8 @@ func GetProductsByCategory(categoryId int64) ([]Product, error) {
 	return products, nil
 }
 
-// CheckStockAvailable checks if enough stock is available for a product
+// CheckStockAvailable verifies if sufficient stock is available for a product and returns availability status
+// used in: handlers.CheckStock
 func CheckStockAvailable(productID int64, quantity int) (bool, int, error) {
 	var stockQty int
 	var status string
@@ -183,7 +202,8 @@ func CheckStockAvailable(productID int64, quantity int) (bool, int, error) {
 	return stockQty >= quantity, stockQty, nil
 }
 
-// ReduceStock reduces the stock quantity when an order is confirmed
+// ReduceStock decreases the stock quantity for a product when an order is confirmed
+// used in: handlers.ReduceStock
 func ReduceStock(productID int64, quantity int) error {
 	query := `UPDATE products 
 	          SET stock_qty = stock_qty - $1, updated_at = now()

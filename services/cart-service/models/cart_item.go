@@ -30,7 +30,8 @@ type UpdateItemRequest struct {
 	Quantity int `json:"quantity" example:"3" binding:"required,min=1"`
 }
 
-// GetCartItems retrieves all items in a cart with product details and calculates total
+// GetCartItems retrieves all items in a cart with product details and calculates the total price
+// used in: cart.GetOrCreateCart, cart.Reload
 func GetCartItems(cartId int64) ([]CartItem, int, error) {
 	query := `SELECT 
 	            ci.id, ci.cart_id, ci.product_id, ci.quantity, ci.price_cents, 
@@ -72,7 +73,8 @@ func GetCartItems(cartId int64) ([]CartItem, int, error) {
 	return items, total, nil
 }
 
-// AddOrUpdate adds a product to cart or updates quantity if it already exists
+// AddOrUpdate adds a product to cart or increases quantity if it already exists
+// used in: handlers.AddItem
 func (ci *CartItem) AddOrUpdate() error {
 	// Get current product price
 	var priceCents int
@@ -120,7 +122,8 @@ func (ci *CartItem) AddOrUpdate() error {
 	return err
 }
 
-// UpdateQuantity updates the quantity of a cart item
+// UpdateQuantity sets a new quantity for an existing cart item
+// used in: handlers.UpdateItem
 func (ci *CartItem) UpdateQuantity() error {
 	query := `UPDATE cart_items 
 	          SET quantity=$1, updated_at=now() 
@@ -136,7 +139,8 @@ func (ci *CartItem) UpdateQuantity() error {
 	return err
 }
 
-// Remove removes a cart item
+// Remove deletes a cart item from the cart
+// used in: handlers.RemoveItem
 func (ci *CartItem) Remove() error {
 	query := `DELETE FROM cart_items 
 	          WHERE cart_id=$1 AND product_id=$2`
