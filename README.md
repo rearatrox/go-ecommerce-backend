@@ -85,15 +85,15 @@ Each service runs as an independent container in the Docker Compose setup and us
    ```
 
 4. **Test services**   
-   - Product-Service: [http://localhost:8081](http://localhost:8081)
-   - User-Service: [http://localhost:8082](http://localhost:8082)
+   - User-Service: [http://localhost:8081](http://localhost:8081)
+   - Product-Service: [http://localhost:8082](http://localhost:8082)
    - Cart-Service: [http://localhost:8083](http://localhost:8083)
    - Order-Service: [http://localhost:8084](http://localhost:8084)
    - pgweb (DB-Admin): [http://localhost:8088](http://localhost:8088)
 
 5. **Open Swagger UI**
-   - Product-Service Swagger: [http://localhost:8081/api/v1/products/swagger/index.html](http://localhost:8081/api/v1/products/swagger/index.html)
-   - User-Service Swagger: [http://localhost:8082/api/v1/users/swagger/index.html](http://localhost:8082/api/v1/users/swagger/index.html)
+   - User-Service Swagger: [http://localhost:8081/api/v1/users/swagger/index.html](http://localhost:8081/api/v1/users/swagger/index.html)
+   - Product-Service Swagger: [http://localhost:8082/api/v1/products/swagger/index.html](http://localhost:8082/api/v1/products/swagger/index.html)
    - Cart-Service Swagger: [http://localhost:8083/api/v1/cart/swagger/index.html](http://localhost:8083/api/v1/cart/swagger/index.html)
    - Order-Service Swagger: [http://localhost:8084/api/v1/orders/swagger/index.html](http://localhost:8084/api/v1/orders/swagger/index.html) 
 
@@ -145,15 +145,15 @@ Each service has its own Swagger documentation based on [swaggo/gin-swagger](htt
 
 The Swagger files are automatically generated during build and enable interactive documentation of all API endpoints.
 
-### 📦 Product-Service
-
-- **Port:** `${PRODUCTSERVICE_PORT}` (default: `8081`)  
-- **Swagger-URL:** [http://localhost:8081/api/v1/products/swagger/index.html](http://localhost:8081/api/v1/products/swagger/index.html)
-
 ### 👤 User-Service
 
-- **Port:** `${USERSERVICE_PORT}` (default: `8082`)  
-- **Swagger-URL:** [http://localhost:8082/api/v1/users/swagger/index.html](http://localhost:8082/api/v1/users/swagger/index.html)
+- **Port:** `${USERSERVICE_PORT}` (default: `8081`)  
+- **Swagger-URL:** [http://localhost:8081/api/v1/users/swagger/index.html](http://localhost:8081/api/v1/users/swagger/index.html)
+
+### 📦 Product-Service
+
+- **Port:** `${PRODUCTSERVICE_PORT}` (default: `8082`)  
+- **Swagger-URL:** [http://localhost:8082/api/v1/products/swagger/index.html](http://localhost:8082/api/v1/products/swagger/index.html)
 
 ### 🛒 Cart-Service
 
@@ -237,11 +237,11 @@ All migrations are located under `/pkg/db/migrations/` and are automatically exe
 - [x] Role-Based Access Control (Admin/User)
 - [x] Automatic database migrations
 - [x] Swagger documentation for all services
+- [x] **Stock validation** - Check if enough inventory available when adding to cart
+- [x] **Inventory management** - Stock reduction for successful orders
 
 ### 🔄 Planned (Priority)
-- [ ] **Stock validation** - Check if enough inventory available when adding to cart
 - [ ] **Payment integration** - Stripe/PayPal for payments
-- [ ] **Inventory management** - Stock reservation and release
 - [ ] **Search and filter functions** - Filter products by criteria
 - [ ] **Pagination** - For large product lists
 
