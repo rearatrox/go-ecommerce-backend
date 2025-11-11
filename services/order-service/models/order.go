@@ -138,6 +138,32 @@ func GetOrderByID(orderId, userId int64) (*Order, error) {
 	return order, nil
 }
 
+// GetOrderByIDInternal retrieves an order by ID without user validation (for internal service calls)
+// used in: handlers.InternalUpdateOrderStatus
+func GetOrderByIDInternal(orderId int64) (*Order, error) {
+	order := &Order{}
+	query := `SELECT id, user_id, cart_id, status, total_cents, shipping_address_id, billing_address_id, created_at, updated_at
+	          FROM orders
+	          WHERE id=$1`
+	err := db.DB.QueryRow(db.Ctx, query, orderId).Scan(
+		&order.ID, &order.UserID, &order.CartID, &order.Status, &order.TotalCents,
+		&order.ShippingAddressID, &order.BillingAddressID, &order.CreatedAt, &order.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Load items and addresses
+	if err = order.LoadItems(); err != nil {
+		return nil, err
+	}
+	if err = order.LoadAddresses(); err != nil {
+		return nil, err
+	}
+
+	return order, nil
+}
+
 // GetUserOrders retrieves all orders for a user ordered by creation date
 // used in: handlers.ListOrders
 func GetUserOrders(userId int64) ([]Order, error) {

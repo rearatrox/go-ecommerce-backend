@@ -93,6 +93,49 @@ info:
   title: E-Commerce Backend - Order-Service
   version: "1.0"
 paths:
+  /internal/orders/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: Updates order status without authentication (for service-to-service
+        calls from payment-service)
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: New status
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Order'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Internal order status update
+      tags:
+      - Internal
   /orders:
     get:
       consumes:
