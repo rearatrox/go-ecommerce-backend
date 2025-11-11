@@ -900,6 +900,115 @@
                 }
             }
         },
+        "/products/stock/check": {
+            "post": {
+                "description": "Check if enough stock is available for a product (used by Cart/Order services)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Check stock availability",
+                "parameters": [
+                    {
+                        "description": "Product and quantity to check",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CheckStockRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CheckStockResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/products/stock/reduce": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Reduce stock when an order is confirmed (used by Order service)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Reduce stock quantity",
+                "parameters": [
+                    {
+                        "description": "Product and quantity to reduce",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ReduceStockRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/products/{sku}/categories": {
             "get": {
                 "description": "Get all categories assigned to a specific product",
@@ -951,6 +1060,63 @@
         }
     },
     "definitions": {
+        "handlers.CheckStockRequest": {
+            "type": "object",
+            "required": [
+                "productId",
+                "quantity"
+            ],
+            "properties": {
+                "productId": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "quantity": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 2
+                }
+            }
+        },
+        "handlers.CheckStockResponse": {
+            "type": "object",
+            "properties": {
+                "available": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "availableQty": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "productId": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "requestedQty": {
+                    "type": "integer",
+                    "example": 2
+                }
+            }
+        },
+        "handlers.ReduceStockRequest": {
+            "type": "object",
+            "required": [
+                "productId",
+                "quantity"
+            ],
+            "properties": {
+                "productId": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "quantity": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 2
+                }
+            }
+        },
         "models.Category": {
             "type": "object",
             "required": [

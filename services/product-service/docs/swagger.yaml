@@ -1,5 +1,46 @@
 basePath: API_PREFIX
 definitions:
+  handlers.CheckStockRequest:
+    properties:
+      productId:
+        example: 1
+        type: integer
+      quantity:
+        example: 2
+        minimum: 1
+        type: integer
+    required:
+    - productId
+    - quantity
+    type: object
+  handlers.CheckStockResponse:
+    properties:
+      available:
+        example: true
+        type: boolean
+      availableQty:
+        example: 10
+        type: integer
+      productId:
+        example: 1
+        type: integer
+      requestedQty:
+        example: 2
+        type: integer
+    type: object
+  handlers.ReduceStockRequest:
+    properties:
+      productId:
+        example: 1
+        type: integer
+      quantity:
+        example: 2
+        minimum: 1
+        type: integer
+    required:
+    - productId
+    - quantity
+    type: object
   models.Category:
     properties:
       description:
@@ -688,6 +729,79 @@ paths:
             additionalProperties: true
             type: object
       summary: Get single product by SKU
+      tags:
+      - Products
+  /products/stock/check:
+    post:
+      consumes:
+      - application/json
+      description: Check if enough stock is available for a product (used by Cart/Order
+        services)
+      parameters:
+      - description: Product and quantity to check
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CheckStockRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.CheckStockResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Check stock availability
+      tags:
+      - Products
+  /products/stock/reduce:
+    post:
+      consumes:
+      - application/json
+      description: Reduce stock when an order is confirmed (used by Order service)
+      parameters:
+      - description: Product and quantity to reduce
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.ReduceStockRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Reduce stock quantity
       tags:
       - Products
 securityDefinitions:

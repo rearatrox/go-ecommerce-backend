@@ -128,6 +128,7 @@ Each service runs as an independent container in the Docker Compose setup and us
 
 | Variable | Description | Example Value |
 |-----------|---------------|---------------|
+| **DB_HOST** | Hostname (must match Docker Service-Name!) for PostgreSQL | `api-database` |
 | **DB_USERNAME** | Username for PostgreSQL | `admin` |
 | **DB_PASSWORD** | Password for PostgreSQL | `password123` |
 | **DB_NAME** | Database name | `api_db` |
