@@ -231,3 +231,55 @@ func UpdateOrderStatus(context *gin.Context) {
 	l.Info("updated order status", "user_id", userId, "order_id", orderId, "new_status", req.Status)
 	context.JSON(http.StatusOK, order)
 }
+
+// InternalUpdateOrderStatus godoc
+// @Summary      Internal order status update
+// @Description  Updates order status without authentication (for service-to-service calls from payment-service)
+// @Tags         Internal
+// @Accept       json
+// @Produce      json
+// @Param        id       path      int                  true  "Order ID"
+// @Param        request  body      UpdateStatusRequest  true  "New status"
+// @Success      200      {object}  models.Order
+// @Failure      400      {object}  map[string]interface{}
+// @Failure      404      {object}  map[string]interface{}
+// @Failure      500      {object}  map[string]interface{}
+// @Router       /internal/orders/{id}/status [patch]
+func InternalUpdateOrderStatus(context *gin.Context) {
+	l := logger.FromContext(context.Request.Context())
+	orderIdStr := context.Param("id")
+
+	orderId, err := strconv.ParseInt(orderIdStr, 10, 64)
+	if err != nil {
+		l.Error("invalid order ID", "order_id", orderIdStr, "error", err)
+		context.JSON(http.StatusBadRequest, gin.H{"message": "invalid order ID."})
+		return
+	}
+
+	var req UpdateStatusRequest
+	if err := context.ShouldBindJSON(&req); err != nil {
+		l.Error("failed to bind request", "error", err)
+		context.JSON(http.StatusBadRequest, gin.H{"message": "invalid request.", "error": err.Error()})
+		return
+	}
+
+	l.Debug("InternalUpdateOrderStatus called", "order_id", orderId, "new_status", req.Status)
+
+	// Get order without user validation (internal call)
+	order, err := models.GetOrderByIDInternal(orderId)
+	if err != nil {
+		l.Error("failed to get order", "order_id", orderId, "error", err)
+		context.JSON(http.StatusNotFound, gin.H{"message": "order not found."})
+		return
+	}
+
+	// Update status
+	if err := order.UpdateStatus(req.Status); err != nil {
+		l.Error("failed to update order status", "order_id", orderId, "error", err)
+		context.JSON(http.StatusInternalServerError, gin.H{"message": "could not update order status.", "error": err.Error()})
+		return
+	}
+
+	l.Info("updated order status (internal)", "order_id", orderId, "new_status", req.Status)
+	context.JSON(http.StatusOK, order)
+}

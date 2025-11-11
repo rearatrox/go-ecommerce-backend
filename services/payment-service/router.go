@@ -2,12 +2,13 @@ package main
 
 import (
 	"os"
-	"rearatrox/go-ecommerce-backend/pkg/logger"
-	middleware "rearatrox/go-ecommerce-backend/pkg/middleware/auth"
-	"rearatrox/go-ecommerce-backend/services/order-service/handlers"
 	"strings"
 
-	docs "rearatrox/go-ecommerce-backend/services/order-service/docs"
+	"rearatrox/go-ecommerce-backend/pkg/logger"
+	middleware "rearatrox/go-ecommerce-backend/pkg/middleware/auth"
+	"rearatrox/go-ecommerce-backend/services/payment-service/handlers"
+
+	docs "rearatrox/go-ecommerce-backend/services/payment-service/docs"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -15,7 +16,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-const DEFAULT_PORT = "8084"
+const DEFAULT_PORT = "8085"
 
 func RegisterRoutes(router *gin.Engine) {
 	// CORS Middleware
@@ -27,10 +28,14 @@ func RegisterRoutes(router *gin.Engine) {
 		AllowCredentials: true,
 	}))
 
+	// request-logger middleware (adds request-scoped logger into context)
 	router.Use(logger.GinMiddleware())
 	router.NoRoute(func(c *gin.Context) {
+		// logger from context
 		log := logger.FromContext(c.Request.Context())
+
 		log.Warn("unknown route")
+
 		c.JSON(404, gin.H{"error": "route not found"})
 	})
 
@@ -40,7 +45,7 @@ func RegisterRoutes(router *gin.Engine) {
 		apiPrefix = "/api/v1"
 	}
 
-	port := os.Getenv("ORDERSERVICE_PORT")
+	port := os.Getenv("PAYMENTSERVICE_PORT")
 	if port == "" {
 		port = DEFAULT_PORT
 	}
@@ -50,23 +55,27 @@ func RegisterRoutes(router *gin.Engine) {
 	api := router.Group(apiPrefix)
 	{
 		// make sure the swagger UI knows where to fetch the generated spec
-		api.GET("/orders/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+		api.GET("/payments/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
-		// Internal endpoints (no authentication - for service-to-service communication)
-		internal := api.Group("/internal")
-		{
-			internal.PATCH("/orders/:id/status", handlers.InternalUpdateOrderStatus)
-		}
+		// Webhook endpoint (no authentication - verified by Stripe signature)
+		api.POST("/webhooks/stripe", handlers.WebhookHandler)
 
-		// All order routes require authentication
 		authenticated := api.Group("/")
-		authenticated.Use(middleware.Authenticate)
 		{
-			// Order endpoints
-			authenticated.POST("/orders", handlers.CreateOrder)
-			authenticated.GET("/orders", handlers.ListOrders)
-			authenticated.GET("/orders/:id", handlers.GetOrder)
-			authenticated.PATCH("/orders/:id/status", handlers.UpdateOrderStatus)
+			authenticated.Use(middleware.Authenticate)
+
+			// Payment endpoints
+			authenticated.POST("/payment-intents", handlers.CreatePaymentIntent)
+			authenticated.GET("/payments/:id", handlers.GetPaymentStatus)
+
+			// admin-only
+			admin := authenticated.Group("/admin")
+			admin.Use(middleware.Authorize("admin"))
+			{
+				// admin endpoints go here
+			}
 		}
+
 	}
+
 }
