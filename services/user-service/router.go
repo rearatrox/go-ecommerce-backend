@@ -15,6 +15,8 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
+const DEFAULT_PORT = "8081"
+
 func RegisterRoutes(router *gin.Engine) {
 	// CORS Middleware
 	router.Use(cors.New(cors.Config{
@@ -43,7 +45,7 @@ func RegisterRoutes(router *gin.Engine) {
 
 	port := os.Getenv("USERSERVICE_PORT")
 	if port == "" {
-		port = "8082"
+		port = DEFAULT_PORT
 	}
 	docs.SwaggerInfo.Host = "localhost:" + port
 	docs.SwaggerInfo.BasePath = apiPrefix
