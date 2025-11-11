@@ -266,7 +266,7 @@ go run seed-demo-data.go
 ```
 
 The script creates:
-- **3 demo users** (admin, customer1, customer2) - Password for all: `Test1234!`
+- **3 demo users** (admin, customer1, customer2)
 - **2 addresses per user** (shipping & billing)
 - **4 product categories** (Electronics, Clothing, Home & Garden, Sports)
 - **10 sample products** with stock and images
