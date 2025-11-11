@@ -7,6 +7,7 @@ Currently, the project includes the following services:
 - **Product-Service** – Product management with categories and many-to-many relationships  
 - **Cart-Service** – Shopping cart management with automatic price snapshot functionality  
 - **Order-Service** – Order processing and history with address snapshots
+- **Payment-Service** – Stripe payment integration with webhooks and retry logic
 
 Each service runs as an independent container in the Docker Compose setup and uses a shared PostgreSQL database with automatic migrations.
 
@@ -19,6 +20,7 @@ Each service runs as an independent container in the Docker Compose setup and us
 - Shared `.env` configuration (via `.env.example`)
 - Multi-service setup with **Docker Compose**
 - **Automatic database migrations** with golang-migrate
+- **Internal service authentication** with shared secrets
 - Ready for future **Kubernetes deployments**
 - Each service has its own **Swagger documentation**
 
@@ -27,6 +29,8 @@ Each service runs as an independent container in the Docker Compose setup and us
 - Admin-protected routes with middleware
 - Password hashing with bcrypt
 - Token version management for secure logout functionality
+- Internal API endpoints protected with shared secret authentication
+- Address and payment ownership validation
 
 ### 📦 Product-Service
 - CRUD operations for products (with SKU, prices in cents, stock management)
@@ -49,13 +53,24 @@ Each service runs as an independent container in the Docker Compose setup and us
 - Status management (active, ordered, abandoned)
 - Join with product data for complete item information
 
-### � Order-Service
+### 📦 Order-Service
 - Create orders from active cart with automatic status management
 - Order history with complete item and address details
 - Price and product name snapshots at order time
 - Status tracking (pending, confirmed, shipped, delivered, cancelled)
 - Address linking (shipping and billing)
-- Prepared for payment service integration
+- Address ownership validation for security
+- Order cancellation with stock restoration
+- Automatic stock reduction when orders are confirmed
+
+### 💳 Payment-Service
+- **Stripe integration** with Payment Intents API
+- Secure webhook handling with signature verification
+- Payment retry logic for failed/cancelled payments
+- Order ownership validation before payment creation
+- Automatic order status updates after successful payment
+- Status management (pending, processing, succeeded, failed, cancelled, superseded)
+- Webhook-triggered stock reduction on successful payments
 
 ### �🛠️ Developer Experience
 - Structured **logging** with slog and context propagation
@@ -89,13 +104,15 @@ Each service runs as an independent container in the Docker Compose setup and us
    - Product-Service: [http://localhost:8082](http://localhost:8082)
    - Cart-Service: [http://localhost:8083](http://localhost:8083)
    - Order-Service: [http://localhost:8084](http://localhost:8084)
+   - Payment-Service: [http://localhost:8085](http://localhost:8085)
    - pgweb (DB-Admin): [http://localhost:8088](http://localhost:8088)
 
 5. **Open Swagger UI**
    - User-Service Swagger: [http://localhost:8081/api/v1/users/swagger/index.html](http://localhost:8081/api/v1/users/swagger/index.html)
    - Product-Service Swagger: [http://localhost:8082/api/v1/products/swagger/index.html](http://localhost:8082/api/v1/products/swagger/index.html)
    - Cart-Service Swagger: [http://localhost:8083/api/v1/cart/swagger/index.html](http://localhost:8083/api/v1/cart/swagger/index.html)
-   - Order-Service Swagger: [http://localhost:8084/api/v1/orders/swagger/index.html](http://localhost:8084/api/v1/orders/swagger/index.html) 
+   - Order-Service Swagger: [http://localhost:8084/api/v1/orders/swagger/index.html](http://localhost:8084/api/v1/orders/swagger/index.html)
+   - Payment-Service Swagger: [http://localhost:8085/api/v1/payments/swagger/index.html](http://localhost:8085/api/v1/payments/swagger/index.html) 
 
 ---
 
@@ -105,6 +122,14 @@ Each service runs as an independent container in the Docker Compose setup and us
 |-----------|---------------|---------------|
 | **API_PREFIX** | Common API prefix for all services | `/api/v1` |
 | **JWT_SECRET** | Secret key for JWT token signing | `supersecret` |
+| **INTERNAL_API_SECRET** | Shared secret for internal service-to-service communication | `internal-secret-key` |
+
+### 💳 Stripe
+
+| Variable | Description | Example Value |
+|-----------|---------------|---------------|
+| **STRIPE_SECRET_KEY** | Stripe API secret key | `sk_test_...` |
+| **STRIPE_WEBHOOK_SECRET** | Stripe webhook signing secret | `whsec_...` |
 
 ### 🪵 Logger
 
@@ -119,10 +144,11 @@ Each service runs as an independent container in the Docker Compose setup and us
 
 | Variable | Description | Example Value |
 |-----------|---------------|---------------|
-| **PRODUCTSERVICE_PORT** | External port of Product-Service | `8081` |
-| **USERSERVICE_PORT** | External port of User-Service | `8082` |
+| **USERSERVICE_PORT** | External port of User-Service | `8081` |
+| **PRODUCTSERVICE_PORT** | External port of Product-Service | `8082` |
 | **CARTSERVICE_PORT** | External port of Cart-Service | `8083` |
 | **ORDERSERVICE_PORT** | External port of Order-Service | `8084` |
+| **PAYMENTSERVICE_PORT** | External port of Payment-Service | `8085` |
 
 ### 🗄️ Database
 
@@ -166,6 +192,11 @@ The Swagger files are automatically generated during build and enable interactiv
 - **Port:** `${ORDERSERVICE_PORT}` (default: `8084`)  
 - **Swagger-URL:** [http://localhost:8084/api/v1/orders/swagger/index.html](http://localhost:8084/api/v1/orders/swagger/index.html)
 
+### 💳 Payment-Service
+
+- **Port:** `${PAYMENTSERVICE_PORT}` (default: `8085`)  
+- **Swagger-URL:** [http://localhost:8085/api/v1/payments/swagger/index.html](http://localhost:8085/api/v1/payments/swagger/index.html)
+
 
 > 💡 **Authentication:**  
 > Protected endpoints require a JWT token in the `Authorization` header: `Bearer <token>`  
@@ -197,33 +228,58 @@ The project uses **PostgreSQL** with automatic migrations via `golang-migrate`.
 - `cart_items` - Products in cart with quantity and price snapshot
 
 **Order-Service:**
+**Order-Service:**
 - `orders` - Orders with status, total, and address references
 - `order_items` - Order items with product snapshots (name, price) at order time
 
+**Payment-Service:**
+- `payments` - Payment records with Stripe integration, status tracking, and order linkage
+
 ### Migrations
 
-All migrations are located under `/pkg/db/migrations/` and are automatically executed at startup:
+All migrations are consolidated in a single initial schema file under `/pkg/db/migrations/`:
 
 ```bash
-0001_init.up.sql                                    # Initial users table
-0002_add_role_tokenversion_to_users.up.sql         # Auth extensions
-0003_create_addresses_table.up.sql                  # Addresses
-0004_seed_admin_user.up.sql                         # Default admin user
-0005_create_products_table.up.sql                   # Products
-0006_add_creator_id_to_products.up.sql             # Creator tracking
-0007_alter_id_to_use_bigserial.up.sql              # ID migration to BIGSERIAL
-0008_add_updator_id_to_products.up.sql             # Updator tracking
-0009_create_categories_table.up.sql                 # Categories
-0010_create_product_categories_table.up.sql         # Product-category relation
-0011_add_personal_info_to_users.up.sql             # Personal user info
-0012_create_carts_table.up.sql                      # Shopping carts
-0013_create_cart_items_table.up.sql                 # Cart items
-0014_create_orders_table.up.sql                     # Orders
-0015_create_order_items_table.up.sql                # Order items
+0001_initial_schema.up.sql     # Complete database schema with all tables
+0001_initial_schema.down.sql   # Rollback for complete schema
 ```
+
+The consolidated migration includes:
+- All tables (users, addresses, products, categories, carts, orders, payments)
+- All relationships and foreign keys
+- All indexes for performance optimization
+- Default admin user (email: `admin@example.com`, password: `admin123`)
+- All constraints and data types
 
 > 💡 **pgweb:**  
 > You can visually inspect the database via pgweb: [http://localhost:8088](http://localhost:8088)
+
+---
+
+## 🎲 Demo Data
+
+For testing purposes, you can use the included seed script to populate the database with demo data:
+
+```bash
+cd scripts
+go run seed-demo-data.go
+```
+
+The script creates:
+- **3 demo users** (admin, customer1, customer2) - Password for all: `Test1234!`
+- **2 addresses per user** (shipping & billing)
+- **4 product categories** (Electronics, Clothing, Home & Garden, Sports)
+- **10 sample products** with stock and images
+- **Pre-filled shopping carts** for each customer
+
+**Demo Users:**
+- `admin@example.com` - Admin user (password: `admin123`)
+- `customer1@demo.com` - Customer with shopping cart
+- `customer2@demo.com` - Customer with shopping cart
+
+> 💡 **Note:** Make sure all services are running before executing the seed script!
+
+For more information, see `/scripts/README.md`
 
 ---
 
@@ -234,17 +290,22 @@ All migrations are located under `/pkg/db/migrations/` and are automatically exe
 - [x] Product-Service with categories
 - [x] Cart-Service with price snapshots
 - [x] Order-Service with address snapshots and status management
+- [x] Payment-Service with Stripe integration
 - [x] JWT-based authentication
 - [x] Role-Based Access Control (Admin/User)
 - [x] Automatic database migrations
 - [x] Swagger documentation for all services
-- [x] **Stock validation** - Check if enough inventory available when adding to cart
-- [x] **Inventory management** - Stock reduction for successful orders
+- [x] Stock validation - Check if enough inventory available when adding to cart
+- [x] Inventory management - Stock reduction for successful orders
+- [x] Payment retry logic - Retry failed/cancelled payments
+- [x] Webhook integration - Stripe webhook handling with signature verification
+- [x] Internal API security - Service-to-service authentication
+- [x] Order cancellation - Cancel orders with stock restoration
 
 ### 🔄 Planned (Priority)
-- [ ] **Payment integration** - Stripe/PayPal for payments
-- [ ] **Search and filter functions** - Filter products by criteria
-- [ ] **Pagination** - For large product lists
+- [ ] Search and filter functions - Filter products by criteria
+- [ ] Pagination - For large product lists
+- [ ] PayPal integration - Additional payment provider
 
 ### 💡 Nice-to-Have
 - [ ] Review/rating system for products
@@ -283,12 +344,17 @@ go-ecommerce-backend/
 ├── pkg/                          # Shared packages
 │   ├── db/                       # Database connection & migrations
 │   ├── logger/                   # Structured logging
-│   └── middleware/auth/          # JWT auth middleware
+│   └── middleware/
+│       ├── auth/                 # JWT auth middleware
+│       └── serviceauth/          # Internal service authentication
 ├── services/
 │   ├── user-service/             # User, Auth, Addresses
 │   ├── product-service/          # Products, Categories
 │   ├── cart-service/             # Shopping cart
-│   └── order-service/            # Orders & order history
+│   ├── order-service/            # Orders & order history
+│   └── payment-service/          # Stripe payment integration
+├── scripts/                      # Utility scripts
+│   └── seed-demo-data.go        # Demo data seeding tool
 ├── docker-compose.yaml           # Multi-service setup
 ├── .env.example                  # Environment template
 └── README.md
