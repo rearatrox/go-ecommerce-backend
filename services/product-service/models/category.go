@@ -15,6 +15,8 @@ type Category struct {
 	UpdatedAt   *time.Time `db:"updated_at" json:"updatedAt,omitempty" swaggerignore:"true"`
 }
 
+// InsertCategory creates a new category in the database
+// used in: handlers.CreateCategory
 func (c *Category) InsertCategory() error {
 	query := `INSERT INTO categories (name, slug, description, created_at)
           VALUES ($1, $2, $3, now())
@@ -25,6 +27,8 @@ func (c *Category) InsertCategory() error {
 	return nil
 }
 
+// UpdateCategory updates an existing category's information
+// used in: handlers.UpdateCategory
 func (c *Category) UpdateCategory() error {
 	query := `UPDATE categories
           SET name=$1, slug=$2, description=$3, updated_at=now()
@@ -33,12 +37,16 @@ func (c *Category) UpdateCategory() error {
 	return err
 }
 
+// DeleteCategory permanently removes a category from the database
+// used in: handlers.DeleteCategoryBySlug
 func (c *Category) DeleteCategory() error {
 	query := `DELETE FROM categories WHERE id=$1`
 	_, err := db.DB.Exec(db.Ctx, query, c.ID)
 	return err
 }
 
+// GetCategories retrieves all categories from the database ordered by name
+// used in: handlers.GetCategories
 func GetCategories() ([]Category, error) {
 	query := `SELECT id, name, slug, description, created_at, updated_at FROM categories ORDER BY name`
 	rows, err := db.DB.Query(db.Ctx, query)
@@ -58,6 +66,8 @@ func GetCategories() ([]Category, error) {
 	return categories, nil
 }
 
+// GetCategoryByID retrieves a category by its numeric ID
+// used in: handlers.GetCategoryByID
 func GetCategoryByID(id int64) (*Category, error) {
 	var c Category
 	query := `SELECT id, name, slug, description, created_at, updated_at FROM categories WHERE id=$1`
@@ -68,6 +78,8 @@ func GetCategoryByID(id int64) (*Category, error) {
 	return &c, nil
 }
 
+// GetCategoryBySlug retrieves a category by its URL-friendly slug identifier
+// used in: handlers.GetCategoryBySlug, handlers.UpdateCategory, handlers.DeleteCategoryBySlug, handlers.GetProductsByCategory
 func GetCategoryBySlug(slug string) (*Category, error) {
 	var c Category
 	query := `SELECT id, name, slug, description, created_at, updated_at FROM categories WHERE slug=$1`

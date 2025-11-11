@@ -16,7 +16,8 @@ type Cart struct {
 	Total     int        `json:"totalCents,omitempty"` // Total in cents
 }
 
-// GetOrCreateCart retrieves the active cart for a user or creates one if it doesn't exist
+// GetOrCreateCart retrieves the active cart for a user or creates a new one if none exists
+// used in: handlers.GetCart, handlers.AddItem, handlers.UpdateItem, handlers.RemoveItem, handlers.ClearCart
 func GetOrCreateCart(userId int64) (*Cart, error) {
 	cart := &Cart{}
 
@@ -49,16 +50,8 @@ func GetOrCreateCart(userId int64) (*Cart, error) {
 	return cart, nil
 }
 
-// UpdateStatus updates the status of a cart
-func (c *Cart) UpdateStatus(status string) error {
-	query := `UPDATE carts 
-	          SET status=$1, updated_at=now() 
-	          WHERE id=$2`
-	_, err := db.DB.Exec(db.Ctx, query, status, c.ID)
-	return err
-}
-
 // Clear removes all items from the cart
+// used in: handlers.ClearCart
 func (c *Cart) Clear() error {
 	query := `DELETE FROM cart_items WHERE cart_id=$1`
 	_, err := db.DB.Exec(db.Ctx, query, c.ID)
@@ -72,7 +65,8 @@ func (c *Cart) Clear() error {
 	return err
 }
 
-// Reload refreshes the cart data from database (items and total)
+// Reload refreshes the cart data from database including items and total
+// used in: handlers.AddItem, handlers.UpdateItem, handlers.RemoveItem
 func (c *Cart) Reload() error {
 	items, total, err := GetCartItems(c.ID)
 	if err != nil {

@@ -17,7 +17,8 @@ type OrderItem struct {
 	UpdatedAt   *time.Time `db:"updated_at" json:"updatedAt,omitempty" swaggerignore:"true"`
 }
 
-// GetOrderItems retrieves all items for an order
+// GetOrderItems retrieves all items for a specific order with product details
+// used in: order.LoadItems
 func GetOrderItems(orderId int64) ([]OrderItem, error) {
 	query := `SELECT id, order_id, product_id, quantity, price_cents, product_name, created_at, updated_at
 	          FROM order_items
@@ -56,7 +57,8 @@ type CartItem struct {
 	ProductName string `db:"product_name"`
 }
 
-// GetCartItemsForUser retrieves cart items for validation before creating order
+// GetCartItemsForUser retrieves cart items for stock validation before creating an order
+// used in: handlers.CreateOrder
 func GetCartItemsForUser(userId int64) ([]CartItem, error) {
 	query := `SELECT ci.product_id, ci.quantity, p.name
 	          FROM cart_items ci

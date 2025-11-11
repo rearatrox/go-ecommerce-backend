@@ -33,7 +33,8 @@ type Address struct {
 	IsDefault bool   `json:"isDefault"`
 }
 
-// CreateFromCart creates a new order from an active cart
+// CreateFromCart creates a new order from an active cart and marks cart as ordered
+// used in: handlers.CreateOrder
 func CreateFromCart(userId int64, shippingAddressId, billingAddressId *int64) (*Order, error) {
 	// Start transaction
 	tx, err := db.DB.Begin(db.Ctx)
@@ -111,7 +112,8 @@ func CreateFromCart(userId int64, shippingAddressId, billingAddressId *int64) (*
 	return order, nil
 }
 
-// GetByID retrieves an order by ID
+// GetOrderByID retrieves a specific order by ID for a user including items and addresses
+// used in: handlers.GetOrder, handlers.UpdateOrderStatus
 func GetOrderByID(orderId, userId int64) (*Order, error) {
 	order := &Order{}
 	query := `SELECT id, user_id, cart_id, status, total_cents, shipping_address_id, billing_address_id, created_at, updated_at
@@ -136,7 +138,8 @@ func GetOrderByID(orderId, userId int64) (*Order, error) {
 	return order, nil
 }
 
-// GetUserOrders retrieves all orders for a user
+// GetUserOrders retrieves all orders for a user ordered by creation date
+// used in: handlers.ListOrders
 func GetUserOrders(userId int64) ([]Order, error) {
 	query := `SELECT id, user_id, cart_id, status, total_cents, shipping_address_id, billing_address_id, created_at, updated_at
 	          FROM orders
@@ -178,7 +181,8 @@ func GetUserOrders(userId int64) ([]Order, error) {
 	return orders, nil
 }
 
-// LoadItems loads order items for an order
+// LoadItems loads all order items for an order
+// used in: CreateFromCart, GetOrderByID, GetUserOrders
 func (o *Order) LoadItems() error {
 	items, err := GetOrderItems(o.ID)
 	if err != nil {
@@ -188,7 +192,8 @@ func (o *Order) LoadItems() error {
 	return nil
 }
 
-// LoadAddresses loads shipping and billing addresses for an order
+// LoadAddresses loads shipping and billing address details for an order
+// used in: CreateFromCart, GetOrderByID, GetUserOrders
 func (o *Order) LoadAddresses() error {
 	if o.ShippingAddressID != nil {
 		addr := &Address{}
@@ -217,7 +222,8 @@ func (o *Order) LoadAddresses() error {
 	return nil
 }
 
-// UpdateStatus updates the order status
+// UpdateStatus changes the order status (e.g., pending, confirmed, shipped, delivered, cancelled)
+// used in: handlers.UpdateOrderStatus
 func (o *Order) UpdateStatus(newStatus string) error {
 	query := `UPDATE orders SET status=$1, updated_at=now() WHERE id=$2`
 	_, err := db.DB.Exec(db.Ctx, query, newStatus, o.ID)
