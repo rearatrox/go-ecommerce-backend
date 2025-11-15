@@ -71,13 +71,13 @@ func (u *User) ValidateCredentials() error {
 // SaveUser creates a new user in the database with hashed password
 // used in: handlers.Signup
 func (u *User) SaveUser() error {
-	query := `INSERT INTO users(email, password) VALUES ($1, $2) RETURNING id, role`
+	query := `INSERT INTO users(email, password, first_name, last_name, phone) VALUES ($1, $2, $3, $4, $5) RETURNING id, role`
 	hashedPassword, err := utils.HashPassword(u.Password)
 	if err != nil {
 		return err
 	}
 
-	if err := db.DB.QueryRow(db.Ctx, query, u.Email, hashedPassword).Scan(&u.ID, &u.Role); err != nil {
+	if err := db.DB.QueryRow(db.Ctx, query, u.Email, hashedPassword, u.FirstName, u.LastName, u.Phone).Scan(&u.ID, &u.Role); err != nil {
 		return err
 	}
 	return nil
